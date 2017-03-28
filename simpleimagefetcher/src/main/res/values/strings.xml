@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SimpleImageFetcher</string>
+    <string name="no_network_connection_toast">No Internet Connection</string>
+</resources>
