@@ -25,6 +25,7 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
     private final ImageFetcher mImageFetcher;
     private int currentCount;
     private int totalCount;
+    private int numColumns;
 
     public PopularMoviesAdapter(Context mContext, ImageFetcher imageFetcher) {
         this.mContext = mContext;
@@ -57,11 +58,20 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
 
     @Override
     public int getItemCount() {
-        return (movieList == null) ? 0 : movieList.size();
+
+        return (movieList == null ||numColumns == 0) ? 0 : movieList.size();
     }
 
     boolean hasMoreItemToLoad() {
         return currentCount < totalCount;
+    }
+
+    public int getNumColumns() {
+        return numColumns;
+    }
+
+    public void setNumColumns(int numColumns) {
+        this.numColumns = numColumns;
     }
 
     static class MyViewHolder extends RecyclerView.ViewHolder {

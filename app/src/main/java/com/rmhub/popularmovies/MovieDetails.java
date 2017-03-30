@@ -13,14 +13,27 @@ import java.util.List;
  */
 
 public class MovieDetails implements Parcelable {
-    private static final String BASE_PATH = "https://image.tmdb.org/t/p/w185/";
+    public static final Creator<MovieDetails> CREATOR = new Creator<MovieDetails>() {
+        @Override
+        public MovieDetails createFromParcel(Parcel in) {
+            return new MovieDetails(in);
+        }
+
+        @Override
+        public MovieDetails[] newArray(int size) {
+            return new MovieDetails[size];
+        }
+    };
+    private static final String BASE_PATH = "https://image.tmdb.org/t/p";
+    private static final String POSTER_SIZE_SMALL = "/w92/";
+    private static final String POSTER_SIZE = "/w185/";
+    private static final String BACKDROP_SIZE = "/w1280/";
     private List<Genre> genres;
     private boolean adult, video;
     private String backdrop_path, belongs_to_collection,
             homepage, imdb_id, original_language, original_title, overview,
             poster_path, release_date, status,
             tagline, title;
-
     private long budget, revenue;
     private int id, runtime, vote_count;
     private double popularity, vote_average;
@@ -85,18 +98,6 @@ public class MovieDetails implements Parcelable {
         return 0;
     }
 
-    public static final Creator<MovieDetails> CREATOR = new Creator<MovieDetails>() {
-        @Override
-        public MovieDetails createFromParcel(Parcel in) {
-            return new MovieDetails(in);
-        }
-
-        @Override
-        public MovieDetails[] newArray(int size) {
-            return new MovieDetails[size];
-        }
-    };
-
     public List<Genre> getGenres() {
         return genres;
     }
@@ -122,7 +123,7 @@ public class MovieDetails implements Parcelable {
     }
 
     public String getBackdrop_path() {
-        return backdrop_path;
+        return BASE_PATH + BACKDROP_SIZE + backdrop_path;
     }
 
     public void setBackdrop_path(String backdrop_path) {
@@ -178,11 +179,15 @@ public class MovieDetails implements Parcelable {
     }
 
     public String getPoster_path() {
-        return BASE_PATH + poster_path;
+        return BASE_PATH + POSTER_SIZE + poster_path;
     }
 
     public void setPoster_path(String poster_path) {
         this.poster_path = poster_path;
+    }
+
+    public String getPoster_path_small() {
+        return BASE_PATH + POSTER_SIZE_SMALL + poster_path;
     }
 
     public String getRelease_date() {

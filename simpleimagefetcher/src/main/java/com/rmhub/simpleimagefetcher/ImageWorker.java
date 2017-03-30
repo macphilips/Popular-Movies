@@ -115,7 +115,6 @@ public abstract class ImageWorker {
         return null;
     }
 
-
     /**
      * Load an image specified by the data parameter into an ImageView (override
      * {@link ImageWorker#processBitmap(Object)} to define the processing logic). A memory and
@@ -129,8 +128,7 @@ public abstract class ImageWorker {
      * @param listener  A listener that will be called back once the image has been loaded.
      */
 
-
-    public void loadImage(Object data, ImageView imageView, int pos, OnImageLoadedListener listener) {
+    public void loadImage(Object data, ImageView imageView, OnImageLoadedListener listener) {
         if (data == null) {
             return;
         }
@@ -141,13 +139,10 @@ public abstract class ImageWorker {
             value = mImageCache.getBitmapFromMemCache(String.valueOf(data));
         }
 
-
         if (value != null) {
-
             imageView.setImageDrawable(value);
-
             if (listener != null) {
-                listener.onImageLoaded(true, pos);
+                listener.onImageLoaded(value.getBitmap());
             }
         } else if (cancelPotentialWork(data, imageView)) {
             //BEGIN_INCLUDE(execute_background_task)
@@ -176,7 +171,7 @@ public abstract class ImageWorker {
      * @param imageView The ImageView to bind the downloaded image to.
      */
     public void loadImage(Object data, ImageView imageView) {
-        loadImage(data, imageView, -1, null);
+        loadImage(data, imageView, null);
     }
 
     /**
@@ -342,7 +337,7 @@ public abstract class ImageWorker {
          * @param success True if the image was loaded successfully, false if
          *                there was an error.
          */
-        void onImageLoaded(boolean success, int pos);
+        void onImageLoaded(Bitmap success);
     }
 
     /**
@@ -473,9 +468,9 @@ public abstract class ImageWorker {
                 }
                 success = true;
                 setImageDrawable(imageView, value);
-            }
-            if (mOnImageLoadedListener != null) {
-                //  mOnImageLoadedListener.onImageLoaded(success);
+                if (mOnImageLoadedListener != null) {
+                    mOnImageLoadedListener.onImageLoaded(value.getBitmap());
+                }
             }
             //END_INCLUDE(complete_background_work)
         }

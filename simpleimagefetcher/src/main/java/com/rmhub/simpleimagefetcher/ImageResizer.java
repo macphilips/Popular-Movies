@@ -40,9 +40,9 @@ public class ImageResizer extends ImageWorker {
     /**
      * Initialize providing a single target image size (used for both width and height);
      *
-     * @param context
-     * @param imageWidth
-     * @param imageHeight
+     * @param context     '
+     * @param imageWidth  '
+     * @param imageHeight "
      */
     public ImageResizer(Context context, int imageWidth, int imageHeight) {
         super(context);
@@ -142,6 +142,7 @@ public class ImageResizer extends ImageWorker {
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
+        Log.d(TAG, String.format("height = %d, width = %d, reqHeight = %d, reqWidth = %d", options.outHeight, options.outWidth, reqHeight, reqHeight));
 
         // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
@@ -154,6 +155,7 @@ public class ImageResizer extends ImageWorker {
             addInBitmapOptions(options, cache);
         }
 
+        Log.d(TAG, String.format("height = %d, width = %d", options.outHeight, options.outWidth));
         return BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
     }
 
