@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
@@ -18,6 +18,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.rmhub.popularmovies.R;
+import com.rmhub.popularmovies.helper.MovieDetails;
 import com.rmhub.simpleimagefetcher.ImageCache;
 import com.rmhub.simpleimagefetcher.ImageFetcher;
 import com.rmhub.simpleimagefetcher.ImageWorker;

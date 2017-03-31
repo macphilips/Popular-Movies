@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:background="@color/black"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.rmhub.popularmovies.MovieDetailsActivity"
+    tools:context="com.rmhub.popularmovies.ui.MovieDetailsActivity"
     tools:showIn="@layout/activity_movie_details">
 
     <ScrollView

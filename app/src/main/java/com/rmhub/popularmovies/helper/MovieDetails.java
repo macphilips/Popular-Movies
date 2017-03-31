@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -13,6 +13,7 @@ import java.util.List;
  */
 
 public class MovieDetails implements Parcelable {
+
     public static final Creator<MovieDetails> CREATOR = new Creator<MovieDetails>() {
         @Override
         public MovieDetails createFromParcel(Parcel in) {
@@ -67,6 +68,8 @@ public class MovieDetails implements Parcelable {
         vote_count = in.readInt();
         popularity = in.readDouble();
         vote_average = in.readDouble();
+        rgb = in.readInt();
+        titleTextColor = in.readInt();
     }
 
     @Override
@@ -93,6 +96,8 @@ public class MovieDetails implements Parcelable {
         dest.writeInt(vote_count);
         dest.writeDouble(popularity);
         dest.writeDouble(vote_average);
+        dest.writeInt(rgb);
+        dest.writeInt(titleTextColor);
     }
 
     @Override

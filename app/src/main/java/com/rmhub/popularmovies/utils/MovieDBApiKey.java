@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.utils;
 
 /**
  * Created by MOROLANI on 3/27/2017

@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 /**
  * Created by MOROLANI on 3/27/2017
@@ -7,6 +7,6 @@ package com.rmhub.popularmovies;
  * .
  */
 
-interface ResultCallback {
+public interface ResultCallback {
     void onFetchResult(String result);
 }

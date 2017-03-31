@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+
+import com.rmhub.popularmovies.R;
+import com.rmhub.popularmovies.utils.PermissionUtil;
 
 /**
  * Created by MOROLANI on 2/16/2017

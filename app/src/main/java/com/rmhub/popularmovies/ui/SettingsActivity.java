@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 
 import android.annotation.TargetApi;
@@ -15,6 +15,8 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.util.Log;
 import android.view.MenuItem;
+
+import com.rmhub.popularmovies.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

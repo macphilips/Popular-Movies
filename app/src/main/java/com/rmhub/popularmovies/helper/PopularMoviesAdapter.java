@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.rmhub.popularmovies.R;
 import com.rmhub.simpleimagefetcher.ImageFetcher;
 import com.rmhub.simpleimagefetcher.ImageWorker;
 

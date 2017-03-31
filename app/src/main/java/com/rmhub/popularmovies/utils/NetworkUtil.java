@@ -1,7 +1,10 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.utils;
 
 import android.support.annotation.Nullable;
 import android.util.Log;
+
+import com.rmhub.popularmovies.helper.MovieDetails;
+import com.rmhub.popularmovies.helper.ResultCallback;
 
 import java.io.BufferedReader;
 import java.io.IOException;

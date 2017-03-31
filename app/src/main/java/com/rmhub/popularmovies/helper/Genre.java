@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -11,7 +11,28 @@ import android.os.Parcelable;
  */
 
 class Genre implements Parcelable{
+    public static final Creator<Genre> CREATOR = new Creator<Genre>() {
+        @Override
+        public Genre createFromParcel(Parcel in) {
+            return new Genre(in);
+        }
+
+        @Override
+        public Genre[] newArray(int size) {
+            return new Genre[size];
+        }
+    };
     private int id;
+    private String name;
+
+    protected Genre() {
+
+    }
+
+    protected Genre(Parcel in) {
+        id = in.readInt();
+        name = in.readString();
+    }
 
     public int getId() {
         return id;
@@ -29,15 +50,6 @@ class Genre implements Parcelable{
         this.name = name;
     }
 
-    private String name;
-    protected Genre(){
-
-    }
-    protected Genre(Parcel in) {
-        id = in.readInt();
-        name = in.readString();
-    }
-
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(id);
@@ -48,16 +60,4 @@ class Genre implements Parcelable{
     public int describeContents() {
         return 0;
     }
-
-    public static final Creator<Genre> CREATOR = new Creator<Genre>() {
-        @Override
-        public Genre createFromParcel(Parcel in) {
-            return new Genre(in);
-        }
-
-        @Override
-        public Genre[] newArray(int size) {
-            return new Genre[size];
-        }
-    };
 }

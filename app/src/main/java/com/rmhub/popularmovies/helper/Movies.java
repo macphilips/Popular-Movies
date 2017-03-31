@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 import java.util.List;
 
@@ -9,8 +9,8 @@ import java.util.List;
  * .
  */
 
-class Movies implements ResultCallback {
-    List<MovieDetails> list;
+public class Movies implements ResultCallback {
+    public List<MovieDetails> list;
     private int total_count;
     private int total_page;
 

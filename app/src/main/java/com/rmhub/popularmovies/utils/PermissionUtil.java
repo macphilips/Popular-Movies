@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.utils;
 
 /**
  * Created by MOROLANI on 3/27/2017
@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+
+import com.rmhub.popularmovies.ui.ConfirmationDialog;
 
 /**
  * Created by MOROLANI on 3/7/2017

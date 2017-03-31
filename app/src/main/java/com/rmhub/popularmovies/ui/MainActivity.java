@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 import android.Manifest;
 import android.app.Dialog;
@@ -25,13 +25,19 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 
+import com.rmhub.popularmovies.BuildConfig;
+import com.rmhub.popularmovies.R;
+import com.rmhub.popularmovies.helper.LoadMoreCallback;
+import com.rmhub.popularmovies.helper.MovieDetails;
+import com.rmhub.popularmovies.helper.Movies;
+import com.rmhub.popularmovies.helper.PopularMoviesAdapter;
+import com.rmhub.popularmovies.helper.ScrollChange;
+import com.rmhub.popularmovies.utils.NetworkUtil;
 import com.rmhub.simpleimagefetcher.ImageCache;
 import com.rmhub.simpleimagefetcher.ImageFetcher;
 import com.rmhub.simpleimagefetcher.Utils;
 
 import java.util.Locale;
-
-import static com.rmhub.popularmovies.SettingsActivity.SETTINGS_CHANGED;
 
 public class MainActivity extends AppCompatActivity implements LoadMoreCallback, View.OnClickListener {
     private static final String[] PERMISSIONS = {Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -188,7 +194,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SETTINGS) {
-            if (resultCode == SETTINGS_CHANGED) {
+            if (resultCode == SettingsActivity.SETTINGS_CHANGED) {
                 reload();
             }
         }

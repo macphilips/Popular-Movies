@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.ui;
 
 import android.app.Activity;
 import android.app.AlertDialog;

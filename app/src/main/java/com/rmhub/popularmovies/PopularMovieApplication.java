@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.rmhub.popularmovies.utils.NetworkUtil;
+
 /**
  * Created by MOROLANI on 3/30/2017
  * <p>

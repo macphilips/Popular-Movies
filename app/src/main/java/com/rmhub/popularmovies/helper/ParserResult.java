@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies;
+package com.rmhub.popularmovies.helper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
