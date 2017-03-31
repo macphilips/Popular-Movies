@@ -25,19 +25,27 @@ public class NetworkUtil {
     private static final String POPULAR_MOVIE_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/popular";
     private static final String TOP_RATED_MOVIES_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/top_rated";
     private static final String GENRE_LIST_ENDPOINT_URL = API_URL + "/genre/movie/list";
+    public static String DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
 
 
     public static void getPopularMovies(int page_num, ResultCallback callback) {
         String url = String.format(Locale.US,
-                "%s?api_key=%s&page=%d", POPULAR_MOVIE_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
+                "%s?api_key=%s&page=%d", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
         fetchResult(url, callback);
     }
 
-    public static void getTopRatedMovies(int page_num, ResultCallback callback) {
-        String url = String.format(Locale.US,
-                "%s?api_key=%s&page=%d", TOP_RATED_MOVIES_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
-        fetchResult(url, callback);
+    public static void setDefaultEndpointUrl(String key) {
+        Log.d(NetworkUtil.class.getSimpleName(), "Setting default url endpoint");
+        switch (key) {
+            case "Popular Movies":
+                DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
+                break;
+            case "Top Rated Movies":
+                DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
+                break;
+        }
     }
+
 
     public static void getGenreMovies(int page_num, ResultCallback callback) {
         String url = String.format(Locale.US,

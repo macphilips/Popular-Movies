@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -20,8 +21,9 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewTreeObserver;
-import android.widget.Toast;
+import android.view.Window;
 
 import com.rmhub.simpleimagefetcher.ImageCache;
 import com.rmhub.simpleimagefetcher.ImageFetcher;
@@ -31,7 +33,7 @@ import java.util.Locale;
 
 import static com.rmhub.popularmovies.SettingsActivity.SETTINGS_CHANGED;
 
-public class MainActivity extends AppCompatActivity implements LoadMoreCallback {
+public class MainActivity extends AppCompatActivity implements LoadMoreCallback, View.OnClickListener {
     private static final String[] PERMISSIONS = {Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE};
     private static final int REQUEST_PERMISSIONS = 1;
@@ -49,27 +51,32 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
+        }
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int height = size.y;
-
-        cacheParams =
-                new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
+        cacheParams = new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
         mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.poster_column_size);
         mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
-        cacheParams.setMemCacheSizePercent(0.25f); // Set memory cache to 25% of app memory
-        // The welcome screen for this app (only one that automatically shows)
+        cacheParams.setMemCacheSizePercent(0.25f);
+
+        setupLayout();
+        startTask(1);
+
+
+    }
+
+    private void setupLayout() {
         mImageFetcher = new ImageFetcher(this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
         mImageFetcher.setLoadingImage(R.drawable.post_background);
         mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
         mAdapter = new PopularMoviesAdapter(this, mImageFetcher);
-
+        mAdapter.setOnItemClickCallBack(this);
         final RecyclerView rv = (RecyclerView) findViewById(R.id.rv_movie_list);
 
         final GridLayoutManager mLayoutManager = new GridLayoutManager(this, 3);
@@ -106,13 +113,15 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback 
                     }
                 });
 
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int height = size.y;
         Log.i(getClass().getSimpleName(), String.format(Locale.US, "RecyclerView.Height = %d, RecyclerView.width = %d",
                 mLayoutManager.getHeight(), mLayoutManager.getWidth()));
         Log.i(getClass().getSimpleName(), String.format(Locale.US, "Height = %d, width = %d",
                 height, width));
-        startTask(1);
-
-
     }
 
     @Override
@@ -179,12 +188,16 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SETTINGS) {
-            if (requestCode == SETTINGS_CHANGED) {
-
-            } else {
-                Toast.makeText(this, "Setting Unchanged", Toast.LENGTH_LONG).show();
+            if (resultCode == SETTINGS_CHANGED) {
+                reload();
             }
         }
+    }
+
+    private void reload() {
+        mAdapter.clearAdapter();
+        mScrollChange.reset();
+        startTask(1);
     }
 
     private boolean hasPermissionsGranted(String[] permissions) {
@@ -195,11 +208,8 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback 
     }
 
     private boolean hasPermissionGranted(String permission) {
-        if (ActivityCompat.checkSelfPermission(this, permission)
-                != PackageManager.PERMISSION_GRANTED) {
-            return true;
-        }
-        return false;
+        return ActivityCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -256,14 +266,31 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback 
             case R.id.action_clear_cache:
                 if (mImageFetcher != null) {
                     mImageFetcher.clearCache();
+                    mAdapter.notifyDataSetChanged();
                 }
                 return true;
-            case R.id.action_sort:
-                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        Object tag = v.getTag();
+        if (tag != null && tag instanceof MovieDetails) {
+            Intent i = new Intent(this, MovieDetailsActivity.class);
+            i.putExtra(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetails) tag);
+            if (Utils.hasJellyBean()) {
+                ActivityOptionsCompat options = ActivityOptionsCompat.
+                        makeSceneTransitionAnimation(this, v,
+                                String.format(Locale.US, "poster_%d", ((MovieDetails) tag).getId()));
+                startActivity(i, options.toBundle());
+            } else {
+                startActivity(i);
+            }
+        }
     }
 
     private class LoadMovieTask extends AsyncTask<Integer, Void, Movies> {

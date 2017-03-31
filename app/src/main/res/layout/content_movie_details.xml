@@ -33,7 +33,7 @@
                     android:layout_marginLeft="-15dp"
                     android:layout_marginRight="-15dp"
                     android:layout_marginTop="-15dp"
-                    android:contentDescription="@string/image_button"
+                    android:contentDescription="@string/image_desc"
                     android:elevation="@dimen/elevate_dimen"
                     android:scaleType="centerCrop"
                     android:src="@drawable/sample_backdrop" />
@@ -45,7 +45,7 @@
                     android:layout_marginLeft="-15dp"
                     android:layout_marginRight="-15dp"
                     android:layout_marginTop="-15dp"
-                    android:background="@drawable/back_drop_blanket"
+                    android:background="@drawable/overlay"
                     android:elevation="@dimen/elevate_dimen"
                     android:scaleType="centerCrop" />
 
@@ -121,17 +121,17 @@
 
                 <ImageButton
                     android:id="@+id/movie_poster"
-                    android:layout_width="92dp"
-                    android:layout_height="136dp"
+                    android:layout_width="100dp"
+                    android:layout_height="146dp"
                     android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true"
                     android:layout_alignParentTop="true"
                     android:layout_marginLeft="10dp"
                     android:layout_marginStart="10dp"
-                    android:scaleType="centerCrop"
                     android:background="@android:color/transparent"
-                    android:contentDescription="@string/image_button"
+                    android:contentDescription="@string/image_desc"
                     android:elevation="@dimen/elevate_dimen"
+                    android:scaleType="centerCrop"
                     android:src="@drawable/sample_poster_w182" />
 
 
@@ -144,7 +144,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/contain2"
                 android:layout_marginTop="10dp"
-                android:background="@color/orange"
+                android:background="@color/colorPrimaryDark"
                 android:elevation="@dimen/elevate_dimen"
                 android:orientation="vertical"
                 android:padding="15dp">
@@ -177,8 +177,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/overview_contain"
-                android:background="@drawable/footer_blanket"
-                android:contentDescription="@string/image_button"
+                android:background="@drawable/overview_bg"
+                android:contentDescription="@string/image_desc"
                 android:elevation="@dimen/elevate_dimen" />
         </RelativeLayout>
     </ScrollView>

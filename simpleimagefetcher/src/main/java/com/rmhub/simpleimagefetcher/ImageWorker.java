@@ -142,7 +142,7 @@ public abstract class ImageWorker {
         if (value != null) {
             imageView.setImageDrawable(value);
             if (listener != null) {
-                listener.onImageLoaded(value.getBitmap());
+                listener.onImageLoaded(value.getBitmap(), imageView);
             }
         } else if (cancelPotentialWork(data, imageView)) {
             //BEGIN_INCLUDE(execute_background_task)
@@ -337,7 +337,7 @@ public abstract class ImageWorker {
          * @param success True if the image was loaded successfully, false if
          *                there was an error.
          */
-        void onImageLoaded(Bitmap success);
+        void onImageLoaded(Bitmap success, ImageView view);
     }
 
     /**
@@ -469,7 +469,7 @@ public abstract class ImageWorker {
                 success = true;
                 setImageDrawable(imageView, value);
                 if (mOnImageLoadedListener != null) {
-                    mOnImageLoadedListener.onImageLoaded(value.getBitmap());
+                    mOnImageLoadedListener.onImageLoaded(value.getBitmap(), imageView);
                 }
             }
             //END_INCLUDE(complete_background_work)

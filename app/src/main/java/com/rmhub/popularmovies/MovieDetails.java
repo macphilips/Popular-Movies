@@ -37,6 +37,8 @@ public class MovieDetails implements Parcelable {
     private long budget, revenue;
     private int id, runtime, vote_count;
     private double popularity, vote_average;
+    private int rgb;
+    private int titleTextColor;
 
     public MovieDetails() {
 
@@ -278,4 +280,19 @@ public class MovieDetails implements Parcelable {
         this.vote_average = vote_average;
     }
 
+    public int getRgb() {
+        return rgb;
+    }
+
+    public void setRgb(int rgb) {
+        this.rgb = rgb;
+    }
+
+    public int getTitleTextColor() {
+        return titleTextColor;
+    }
+
+    public void setTitleTextColor(int titleTextColor) {
+        this.titleTextColor = titleTextColor;
+    }
 }

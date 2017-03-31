@@ -13,13 +13,10 @@ import android.support.v7.widget.RecyclerView;
 
 public class ScrollChange extends RecyclerView.OnScrollListener {
 
+    private static int page_num = 1;
     private final RecyclerView.LayoutManager manager;
     private final LoadMoreCallback callback;
-    private int totalItemCount;
-    private int lastVisibleItem;
     private boolean loading;
-    private int visibleThreshold;
-    private static int page_num = 1;
 
     public ScrollChange(RecyclerView.LayoutManager mAdapter, LoadMoreCallback callback) {
         this.manager = mAdapter;
@@ -39,6 +36,9 @@ public class ScrollChange extends RecyclerView.OnScrollListener {
     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
         super.onScrolled(recyclerView, dx, dy);
 
+        int totalItemCount;
+        int lastVisibleItem;
+        int visibleThreshold;
         if (manager instanceof GridLayoutManager) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) manager;
             totalItemCount = gridLayoutManager.getItemCount();
@@ -57,5 +57,9 @@ public class ScrollChange extends RecyclerView.OnScrollListener {
             }
             loading = true;
         }
+    }
+
+    public void reset() {
+        page_num = 1;
     }
 }

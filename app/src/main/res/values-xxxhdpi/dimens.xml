@@ -6,5 +6,5 @@
     <dimen name="text_heading2">20sp</dimen>
     <dimen name="text_heading3">18sp</dimen>
     <dimen name="text_heading4">16sp</dimen>
-    <dimen name="backdrop_size">300dp</dimen>
+    <dimen name="backdrop_size">250dp</dimen>
 </resources>

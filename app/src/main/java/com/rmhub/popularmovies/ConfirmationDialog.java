@@ -40,7 +40,6 @@ public class ConfirmationDialog extends DialogFragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         PermissionUtil.requestPermissions(permissions, parent);
-                        // requestPermissions(VIDEO_PERMISSIONS, REQUEST_VIDEO_PERMISSIONS);
                     }
                 })
                 .setNegativeButton(android.R.string.cancel,

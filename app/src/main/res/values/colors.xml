@@ -21,4 +21,6 @@
     <color name="dark_grey">#424242</color>
     <color name="app_grey">#424242</color>
     <color name="bg_grey">#fb2a2922</color>
+    <color name="overlay_start">#661d2020</color>
+    <color name="overlay_end">#661c262f</color>
 </resources>
