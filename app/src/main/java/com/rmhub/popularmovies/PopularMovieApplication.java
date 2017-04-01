@@ -15,6 +15,7 @@ import com.rmhub.popularmovies.utils.NetworkUtil;
 
 public class PopularMovieApplication extends Application implements SharedPreferences.OnSharedPreferenceChangeListener {
 
+   private boolean cacheEnable = false;
 
     @Override
     public void onCreate() {
@@ -33,5 +34,13 @@ public class PopularMovieApplication extends Application implements SharedPrefer
                 NetworkUtil.setDefaultEndpointUrl(titles[index]);
             }
         }
+
+        if (key.equalsIgnoreCase(getString(R.string.cache_image))) {
+            cacheEnable = sharedPreferences.getBoolean(getResources().getString(R.string.cache_image), false);
+        }
+    }
+
+    public boolean isCacheEnable() {
+        return cacheEnable;
     }
 }

@@ -1,8 +1,7 @@
 package com.rmhub.popularmovies.ui;
 
 import android.Manifest;
-import android.app.Dialog;
-import android.app.ProgressDialog;
+import android.app.Application;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
@@ -24,8 +23,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.widget.ProgressBar;
 
 import com.rmhub.popularmovies.BuildConfig;
+import com.rmhub.popularmovies.PopularMovieApplication;
 import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.helper.LoadMoreCallback;
 import com.rmhub.popularmovies.helper.MovieDetails;
@@ -52,12 +53,18 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     private ImageFetcher mImageFetcher;
     private int mImageThumbSpacing;
     private String loading = "Popular Movie";
-    private boolean showdialog;
+    private PopularMovieApplication popApp;
+
+    private ProgressBar mLoadingIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Application app = getApplication();
+        if (app instanceof PopularMovieApplication) {
+            popApp = (PopularMovieApplication) app;
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
         }
@@ -70,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.poster_column_size);
         mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
         cacheParams.setMemCacheSizePercent(0.25f);
-
+        mLoadingIndicator = (ProgressBar) findViewById(R.id.progressBar);
         setupLayout();
         startTask(1);
 
@@ -78,12 +85,14 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     }
 
     private void setupLayout() {
-        mImageFetcher = new ImageFetcher(this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
-        mImageFetcher.setLoadingImage(R.drawable.post_background);
-        mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
-        mAdapter = new PopularMoviesAdapter(this, mImageFetcher);
+        mAdapter = new PopularMoviesAdapter(this);
         mAdapter.setOnItemClickCallBack(this);
         final RecyclerView rv = (RecyclerView) findViewById(R.id.rv_movie_list);
+
+        mImageFetcher = new ImageFetcher(MainActivity.this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
+        mImageFetcher.setLoadingImage(R.drawable.post_background);
+        mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
+        mAdapter.setImageFetcher(mImageFetcher);
 
         final GridLayoutManager mLayoutManager = new GridLayoutManager(this, 3);
         rv.setLayoutManager(mLayoutManager);
@@ -102,10 +111,10 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
                                         (mLayoutManager.getWidth() / numColumns) - mImageThumbSpacing;
                                 mAdapter.setNumColumns(numColumns);
                                 mLayoutManager.setSpanCount(numColumns);
-
-                                //      mAdapter.setItemHeight(columnWidth);
+                                mImageFetcher.setImageSize(columnWidth);
+                                mAdapter.setItemWidth(columnWidth);
                                 if (BuildConfig.DEBUG) {
-                                    printLog("onCreateView - numColumns set to %d", numColumns);
+                                    printLog("onCreateView - columnWidth set to %d %d", columnWidth, mImageThumbSize);
                                 }
                                 if (Utils.hasJellyBean()) {
                                     rv.getViewTreeObserver()
@@ -138,24 +147,29 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     @Override
     public void onResume() {
         super.onResume();
-        mImageFetcher.setExitTasksEarly(false);
-        mAdapter.notifyDataSetChanged();
+        if (mImageFetcher != null) {
+            mImageFetcher.setExitTasksEarly(false);
+            mAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mImageFetcher.setPauseWork(false);
-        mImageFetcher.setExitTasksEarly(true);
-        mImageFetcher.flushCache();
+        if (mImageFetcher != null) {
+            mImageFetcher.setPauseWork(false);
+            mImageFetcher.setExitTasksEarly(true);
+            mImageFetcher.flushCache();
+        }
 
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mImageFetcher.clearCache();
-
+        if (mImageFetcher != null && popApp != null && popApp.isCacheEnable()) {
+            mImageFetcher.clearCache();
+        }
     }
 
     void startTask(int page_num) {
@@ -242,27 +256,16 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         return true;
     }
 
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        ProgressDialog dialog = new ProgressDialog(this);
-        dialog.setIndeterminate(true);
-        dialog.setMessage(String.format("Loading %s from %s", loading, NetworkUtil.BASE_URL));
-        showdialog = true;
-        return dialog;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         switch (id) {

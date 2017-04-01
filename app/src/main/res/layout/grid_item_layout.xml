@@ -8,8 +8,8 @@
         android:id="@+id/movie_poster"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:scaleType="centerCrop"
         android:contentDescription="@string/image_desc"
-        android:paddingLeft="@dimen/image_thumbnail_space"
         app:srcCompat="@drawable/ic_sync_black_24dp" />
 
 </LinearLayout>

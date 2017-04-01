@@ -1,18 +1,16 @@
 package com.rmhub.popularmovies.helper;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Build;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.rmhub.popularmovies.R;
 import com.rmhub.simpleimagefetcher.ImageFetcher;
-import com.rmhub.simpleimagefetcher.ImageWorker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,19 +23,35 @@ import java.util.Locale;
  * .
  */
 
-public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdapter.MyViewHolder> implements ImageWorker.OnImageLoadedListener {
+public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdapter.MyViewHolder> {
     private static List<MovieDetails> movieList = null;
     private final Context mContext;
-    private final ImageFetcher mImageFetcher;
+    private ImageFetcher mImageFetcher;
     private int currentCount;
     private int totalCount;
     private int numColumns;
     private View.OnClickListener listener;
+    private int itemWidth;
+    private LinearLayout.LayoutParams mImageViewLayoutParams;
 
     public PopularMoviesAdapter(Context mContext, ImageFetcher imageFetcher) {
         this.mContext = mContext;
         movieList = new ArrayList<>();
         this.mImageFetcher = imageFetcher;
+        mImageViewLayoutParams =
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    public PopularMoviesAdapter(Context mContext) {
+        this(mContext, null);
+    }
+
+    public ImageFetcher getImageFetcher() {
+        return mImageFetcher;
+    }
+
+    public void setImageFetcher(ImageFetcher mImageFetcher) {
+        this.mImageFetcher = mImageFetcher;
     }
 
     public void clearAdapter() {
@@ -74,11 +88,14 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
         }
 
         holder.moviePoster.setOnClickListener(listener);
-        mImageFetcher.loadImage(tag.getPoster_path(), holder.moviePoster);
+        holder.moviePoster.setLayoutParams(mImageViewLayoutParams);
+        if (mImageFetcher != null)
+            mImageFetcher.loadImage(tag.getPoster_path(), holder.moviePoster);
 
         //ImageView dummy = new ImageView(mContext);
         //dummy.setTag(movieList.get(position));
         //mImageFetcher.loadImage(movieList.get(position).getBackdrop_path(), dummy, this);
+
 
     }
 
@@ -104,31 +121,19 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
         this.listener = listener;
     }
 
-    @Override
-    public void onImageLoaded(Bitmap success, ImageView view) {
-        if (success != null) {
-            // createPaletteAsync(success, (MovieDetails) view.getTag());
+
+
+
+    public void setItemWidth(int itemWidth) {
+
+        if (this.itemWidth == itemWidth) {
+            return;
         }
-    }
+        this.itemWidth = itemWidth;
+        mImageViewLayoutParams =
+                new LinearLayout.LayoutParams(itemWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+        notifyDataSetChanged();
 
-    public void createPaletteAsync(Bitmap bitmap, final MovieDetails details) {
-
-        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-            public void onGenerated(Palette p) {
-                // Use generated instance
-                Palette.Swatch vibrantSwatch = checkVibrantSwatch(p);
-
-            }
-        });
-    }// Return a palette's vibrant swatch after checking that it exists
-
-    private Palette.Swatch checkVibrantSwatch(Palette p) {
-        Palette.Swatch vibrant = p.getVibrantSwatch();
-        if (vibrant != null) {
-            return vibrant;
-        }
-        // Throw error
-        return null;
     }
 
     static class MyViewHolder extends RecyclerView.ViewHolder {

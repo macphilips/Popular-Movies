@@ -21,10 +21,13 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.os.Build;
 import android.util.Log;
 
 import java.io.FileDescriptor;
+import java.util.Locale;
 
 /**
  * A simple subclass of {@link ImageWorker} that resizes images from resources given a target width
@@ -138,15 +141,21 @@ public class ImageResizer extends ImageWorker {
     public static Bitmap decodeSampledBitmapFromDescriptor(
             FileDescriptor fileDescriptor, int reqWidth, int reqHeight, ImageCache cache) {
 
+        Log.d(TAG, "0 " + reqHeight + " " + reqWidth);
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
-        Log.d(TAG, String.format("height = %d, width = %d, reqHeight = %d, reqWidth = %d", options.outHeight, options.outWidth, reqHeight, reqHeight));
+
+        int height = options.outHeight;
+        int width = options.outWidth;
+
+        float ratio = (float) width / reqWidth;
+        reqHeight = (int) (height / ratio);
 
         // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-
+        Log.d(TAG, "InSampleSize " + options.inSampleSize);
         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
 
@@ -154,9 +163,34 @@ public class ImageResizer extends ImageWorker {
         if (Utils.hasHoneycomb()) {
             addInBitmapOptions(options, cache);
         }
+        Bitmap bm = BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
+        if (bm != null) {
+            Log.d(TAG, String.format(Locale.US,
+                    "1 optionHeightB4 = %d, optionWidthB4 = %d, reqHeight = %d, reqWidth = %d, bitmapHeight = %d, bitmapWidth = %d",
+                    height, width, reqHeight, reqWidth, bm.getHeight(), bm.getWidth()));
+        }
 
-        Log.d(TAG, String.format("height = %d, width = %d", options.outHeight, options.outWidth));
-        return BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
+
+        Matrix m = new Matrix();
+        RectF inRect = new RectF(0, 0, bm.getWidth(), bm.getHeight());
+        RectF outRect = new RectF(0, 0, reqWidth, reqHeight);
+        m.setRectToRect(inRect, outRect, Matrix.ScaleToFit.CENTER);
+        float[] values = new float[9];
+        m.getValues(values);
+
+        // resize bitmap
+        Bitmap resized = null;
+        if (reqHeight > 0 && reqWidth > 0)
+            resized = Bitmap.createScaledBitmap(bm, (int) (bm.getWidth() * values[0]), (int) (bm.getHeight() * values[4]), true);
+
+        if (resized != null) {
+            Log.d(TAG, String.format(Locale.US,
+                    "2 optionHeightB4 = %d, optionWidthB4 = %d, reqHeight = %d, reqWidth = %d, bitmapHeight = %d, bitmapWidth = %d",
+                    height, width, reqHeight, reqWidth, resized.getHeight(), resized.getWidth()));
+            return resized;
+        }
+        return bm;
+
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -191,6 +225,10 @@ public class ImageResizer extends ImageWorker {
      */
     public static int calculateInSampleSize(BitmapFactory.Options options,
                                             int reqWidth, int reqHeight) {
+
+        if (reqHeight < 0 || reqWidth < 0) {
+            return 1;
+        }
         // BEGIN_INCLUDE (calculate_sample_size)
         // Raw height and width of image
         final int height = options.outHeight;
@@ -229,6 +267,20 @@ public class ImageResizer extends ImageWorker {
         // END_INCLUDE (calculate_sample_size)
     }
 
+    private static Bitmap scaleBitmap(Bitmap bm, int reqWidth, int reqHeight) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+
+        Log.v("Pictures", "Width and height are " + width + "--" + height);
+
+        Log.v("Pictures", "after scaling Width and height are " + reqWidth + "--" + reqHeight);
+
+        // calc exact destination size
+        return null;
+
+
+    }
+
     /**
      * Set the target image width and height.
      *
@@ -236,6 +288,7 @@ public class ImageResizer extends ImageWorker {
      * @param height
      */
     public void setImageSize(int width, int height) {
+        Log.d(TAG, "setImageSize width " + width + " heigt " + height);
         mImageWidth = width;
         mImageHeight = height;
     }
