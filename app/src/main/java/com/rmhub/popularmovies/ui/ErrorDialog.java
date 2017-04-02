@@ -24,7 +24,7 @@ public class ErrorDialog extends DialogFragment {
         ErrorDialog.newInstance(message).show(manager, ErrorDialog.class.getSimpleName());
     }
 
-    public static ErrorDialog newInstance(String message) {
+    private static ErrorDialog newInstance(String message) {
         ErrorDialog dialog = new ErrorDialog();
         Bundle args = new Bundle();
         args.putString(ARG_MESSAGE, message);
@@ -41,7 +41,7 @@ public class ErrorDialog extends DialogFragment {
                 .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        activity.finish();
+                        dismiss();
                     }
                 })
                 .create();

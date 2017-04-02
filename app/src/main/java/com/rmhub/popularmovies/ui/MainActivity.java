@@ -16,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
 
     private ProgressBar mLoadingIndicator;
     private boolean showingIndicator;
+    private int currentPageNum = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +81,14 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
         cacheParams.setMemCacheSizePercent(0.25f);
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progressBar);
+
+        findViewById(R.id.refresh_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideReloadButton();
+                startTask(currentPageNum);
+            }
+        });
         showIndicator();
 
         setupLayout();
@@ -97,6 +107,16 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
             mLoadingIndicator.setVisibility(View.GONE);
             showingIndicator = false;
         }
+    }
+
+    private void showReloadButton() {
+        findViewById(R.id.error_container).setVisibility(View.VISIBLE);
+        //  showingIndicator = true;
+    }
+
+    private void hideReloadButton() {
+        findViewById(R.id.error_container).setVisibility(View.GONE);
+        ///  showingIndicator = false;
     }
 
     private void setupLayout() {
@@ -189,8 +209,11 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     }
 
     void startTask(int page_num) {
-        if (requestPermission())
+
+        if (requestPermission()) {
+            currentPageNum = page_num;
             new LoadMovieTask().execute(page_num);
+        }
     }
 
     private void printLog(String msg, Object... params) {
@@ -323,18 +346,29 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         protected void onPostExecute(Movies movies) {
             super.onPostExecute(movies);
             hideIndicator();
-            mAdapter.addMovieList(movies.list);
-            mScrollChange.setLoading();
+            if (movies != null) {
+                mAdapter.addMovieList(movies.list);
+                mScrollChange.setLoading();
+            } else {
+                String text = "<h2>No Network Connection!</h2><br><p>Please confirm you are connected to the Internet</p>";
+                ErrorDialog.show(Html.fromHtml(text).toString(), getSupportFragmentManager());
+                showReloadButton();
+
+            }
         }
 
         @Override
         protected Movies doInBackground(Integer... params) {
+            if (!NetworkUtil.checkConnection(MainActivity.this)) {
+                return null;
+            }
             Movies movie = new Movies();
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             NetworkUtil.getPopularMovies(params[0], movie);
             return movie;
         }

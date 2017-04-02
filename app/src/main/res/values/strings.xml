@@ -34,4 +34,5 @@
     <string name="cache_summary_off">Disable</string>
     <string name="cache_summary_on">Enabled</string>
     <string name="sort_default_value">popular</string>
+    <string name="error_msg"><![CDATA[An error occur while making network connection. <br> Please check your connection and tap the button below]]></string>
 </resources>

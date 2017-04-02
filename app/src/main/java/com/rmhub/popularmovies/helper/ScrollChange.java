@@ -82,4 +82,5 @@ public class ScrollChange extends RecyclerView.OnScrollListener {
     public void reset() {
         page_num = 1;
     }
+
 }

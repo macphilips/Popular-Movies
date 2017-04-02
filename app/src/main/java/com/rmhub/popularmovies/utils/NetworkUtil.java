@@ -1,5 +1,8 @@
 package com.rmhub.popularmovies.utils;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -89,6 +92,24 @@ public class NetworkUtil {
         } catch (NumberFormatException ignored) {
         }
         Log.d("sendPostHttpRequest", String.valueOf(result));
+    }
+
+    /**
+     * Simple network connection check.
+     *
+     * @param context
+     */
+    public static boolean checkConnection(Context context) {
+        final ConnectivityManager cm =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        if (networkInfo == null || !networkInfo.isConnectedOrConnecting()) {
+         //   Toast.makeText(context, com.rmhub.simpleimagefetcher.R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
+
+            Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
+            return false;
+        }
+        return true;
     }
 
 }

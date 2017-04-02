@@ -62,6 +62,9 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
     }
 
     public void addMovieList(List<MovieDetails> movieList) {
+        if (movieList==null){
+            return;
+        }
         int end = PopularMoviesAdapter.movieList.size();
         for (int i = 0, n = movieList.size(); i < n; i++) {
             movieList.get(i).setId(i + end + 1);
