@@ -68,7 +68,7 @@ public class PopularMoviesAdapter extends RecyclerView.Adapter<PopularMoviesAdap
         }
         PopularMoviesAdapter.movieList.addAll(movieList);
         currentCount = PopularMoviesAdapter.movieList.size();
-        // notifyDataSetChanged();
+        notifyDataSetChanged();
         notifyItemChanged(currentCount);
     }
 

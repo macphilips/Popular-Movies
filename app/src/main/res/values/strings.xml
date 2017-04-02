@@ -9,8 +9,8 @@
         <item>Top Rated Movies</item>
     </string-array>
     <string-array name="pref_sort_list_values">
-        <item>0</item>
-        <item>1</item>
+        <item>popular</item>
+        <item>top_rated</item>
     </string-array>
     <string name="sort_key">sort_list</string>
 
@@ -30,6 +30,8 @@
     <string name="action_clear_cache">Clear Cache</string>
     <string name="action_sort">Sort</string>
     <string name="movie_poster_transition">movie poster</string>
-    <string name="cache_image">Cache Image</string>
-    <string name="cache_summary">Disable</string>
+    <string name="cache_image">Cache Images</string>
+    <string name="cache_summary_off">Disable</string>
+    <string name="cache_summary_on">Enabled</string>
+    <string name="sort_default_value">popular</string>
 </resources>

@@ -38,12 +38,11 @@ public class NetworkUtil {
     }
 
     public static void setDefaultEndpointUrl(String key) {
-        Log.d(NetworkUtil.class.getSimpleName(), "Setting default url endpoint");
         switch (key) {
-            case "Popular Movies":
+            case "popular":
                 DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
                 break;
-            case "Top Rated Movies":
+            case "top_rated":
                 DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
                 break;
         }

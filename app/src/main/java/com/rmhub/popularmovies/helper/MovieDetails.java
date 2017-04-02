@@ -27,8 +27,8 @@ public class MovieDetails implements Parcelable {
     };
     private static final String BASE_PATH = "https://image.tmdb.org/t/p";
     private static final String POSTER_SIZE_SMALL = "/w92/";
-    private static final String POSTER_SIZE = "/w500/";
-    private static final String BACKDROP_SIZE = "/w1280/";
+    private static final String POSTER_SIZE = "/w185/";
+    private static final String BACKDROP_SIZE = "/w780/";
     private List<Genre> genres;
     private boolean adult, video;
     private String backdrop_path, belongs_to_collection,

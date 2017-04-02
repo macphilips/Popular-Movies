@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     private PopularMovieApplication popApp;
 
     private ProgressBar mLoadingIndicator;
+    private boolean showingIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,10 +79,24 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
         cacheParams.setMemCacheSizePercent(0.25f);
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progressBar);
+        showIndicator();
+
         setupLayout();
         startTask(1);
 
 
+    }
+
+    private void showIndicator() {
+        mLoadingIndicator.setVisibility(View.VISIBLE);
+        showingIndicator = true;
+    }
+
+    private void hideIndicator() {
+        if (showingIndicator) {
+            mLoadingIndicator.setVisibility(View.GONE);
+            showingIndicator = false;
+        }
     }
 
     private void setupLayout() {
@@ -97,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         final GridLayoutManager mLayoutManager = new GridLayoutManager(this, 3);
         rv.setLayoutManager(mLayoutManager);
         mScrollChange = new ScrollChange(mLayoutManager, this);
+        mScrollChange.setImageFetcher(mImageFetcher);
         rv.addOnScrollListener(mScrollChange);
         rv.setAdapter(mAdapter);
         rv.getViewTreeObserver().addOnGlobalLayoutListener(
@@ -167,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mImageFetcher != null && popApp != null && popApp.isCacheEnable()) {
+        if (mImageFetcher != null && popApp != null && !popApp.isCacheEnable()) {
             mImageFetcher.clearCache();
         }
     }
@@ -272,12 +288,6 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
             case R.id.action_settings:
                 startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS);
                 return true;
-            case R.id.action_clear_cache:
-                if (mImageFetcher != null) {
-                    mImageFetcher.clearCache();
-                    mAdapter.notifyDataSetChanged();
-                }
-                return true;
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -312,6 +322,7 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         @Override
         protected void onPostExecute(Movies movies) {
             super.onPostExecute(movies);
+            hideIndicator();
             mAdapter.addMovieList(movies.list);
             mScrollChange.setLoading();
         }

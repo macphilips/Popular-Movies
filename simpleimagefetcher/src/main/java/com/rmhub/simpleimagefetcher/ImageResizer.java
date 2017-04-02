@@ -27,7 +27,6 @@ import android.os.Build;
 import android.util.Log;
 
 import java.io.FileDescriptor;
-import java.util.Locale;
 
 /**
  * A simple subclass of {@link ImageWorker} that resizes images from resources given a target width
@@ -141,7 +140,6 @@ public class ImageResizer extends ImageWorker {
     public static Bitmap decodeSampledBitmapFromDescriptor(
             FileDescriptor fileDescriptor, int reqWidth, int reqHeight, ImageCache cache) {
 
-        Log.d(TAG, "0 " + reqHeight + " " + reqWidth);
         // First decode with inJustDecodeBounds=true to check dimensions
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
@@ -155,8 +153,7 @@ public class ImageResizer extends ImageWorker {
 
         // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-        Log.d(TAG, "InSampleSize " + options.inSampleSize);
-        // Decode bitmap with inSampleSize set
+         // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
 
         // If we're running on Honeycomb or newer, try to use inBitmap
@@ -164,12 +161,6 @@ public class ImageResizer extends ImageWorker {
             addInBitmapOptions(options, cache);
         }
         Bitmap bm = BitmapFactory.decodeFileDescriptor(fileDescriptor, null, options);
-        if (bm != null) {
-            Log.d(TAG, String.format(Locale.US,
-                    "1 optionHeightB4 = %d, optionWidthB4 = %d, reqHeight = %d, reqWidth = %d, bitmapHeight = %d, bitmapWidth = %d",
-                    height, width, reqHeight, reqWidth, bm.getHeight(), bm.getWidth()));
-        }
-
 
         Matrix m = new Matrix();
         RectF inRect = new RectF(0, 0, bm.getWidth(), bm.getHeight());
@@ -184,9 +175,6 @@ public class ImageResizer extends ImageWorker {
             resized = Bitmap.createScaledBitmap(bm, (int) (bm.getWidth() * values[0]), (int) (bm.getHeight() * values[4]), true);
 
         if (resized != null) {
-            Log.d(TAG, String.format(Locale.US,
-                    "2 optionHeightB4 = %d, optionWidthB4 = %d, reqHeight = %d, reqWidth = %d, bitmapHeight = %d, bitmapWidth = %d",
-                    height, width, reqHeight, reqWidth, resized.getHeight(), resized.getWidth()));
             return resized;
         }
         return bm;
@@ -288,7 +276,6 @@ public class ImageResizer extends ImageWorker {
      * @param height
      */
     public void setImageSize(int width, int height) {
-        Log.d(TAG, "setImageSize width " + width + " heigt " + height);
         mImageWidth = width;
         mImageHeight = height;
     }

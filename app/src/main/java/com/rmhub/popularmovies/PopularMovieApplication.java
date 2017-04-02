@@ -15,7 +15,7 @@ import com.rmhub.popularmovies.utils.NetworkUtil;
 
 public class PopularMovieApplication extends Application implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-   private boolean cacheEnable = false;
+    private boolean cacheEnable = false;
 
     @Override
     public void onCreate() {
@@ -28,11 +28,7 @@ public class PopularMovieApplication extends Application implements SharedPrefer
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equalsIgnoreCase(getString(R.string.sort_key))) {
-            int index = Integer.parseInt(sharedPreferences.getString(getResources().getString(R.string.sort_key), "-1"));
-            String[] titles = getResources().getStringArray(R.array.pref_sort_list_titles);
-            if (index >= 0 && index < titles.length) {
-                NetworkUtil.setDefaultEndpointUrl(titles[index]);
-            }
+            NetworkUtil.setDefaultEndpointUrl(sharedPreferences.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value)));
         }
 
         if (key.equalsIgnoreCase(getString(R.string.cache_image))) {
