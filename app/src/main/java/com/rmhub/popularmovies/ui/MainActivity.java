@@ -1,100 +1,83 @@
 package com.rmhub.popularmovies.ui;
 
-import android.Manifest;
-import android.app.Application;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.graphics.Point;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
-import android.util.Log;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.ProgressBar;
 
-import com.rmhub.popularmovies.BuildConfig;
-import com.rmhub.popularmovies.PopularMovieApplication;
 import com.rmhub.popularmovies.R;
-import com.rmhub.popularmovies.helper.LoadMoreCallback;
 import com.rmhub.popularmovies.helper.MovieDetails;
+import com.rmhub.popularmovies.helper.MovieLoader;
 import com.rmhub.popularmovies.helper.Movies;
 import com.rmhub.popularmovies.helper.PopularMoviesAdapter;
-import com.rmhub.popularmovies.helper.ScrollChange;
-import com.rmhub.popularmovies.utils.NetworkUtil;
-import com.rmhub.simpleimagefetcher.ImageCache;
-import com.rmhub.simpleimagefetcher.ImageFetcher;
-import com.rmhub.simpleimagefetcher.Utils;
+import com.rmhub.popularmovies.utils.Utils;
 
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements LoadMoreCallback, View.OnClickListener {
-    private static final String[] PERMISSIONS = {Manifest.permission.INTERNET, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE};
-    private static final int REQUEST_PERMISSIONS = 1;
-    private static final String IMAGE_CACHE_DIR = "thumbs";
-    private static final int SETTINGS = 2;
-    ImageCache.ImageCacheParams cacheParams = null;
-    private int mImageThumbSize;
-    private PopularMoviesAdapter mAdapter;
-    private ScrollChange mScrollChange;
-    private ImageFetcher mImageFetcher;
-    private int mImageThumbSpacing;
-    private String loading = "Popular Movie";
-    private PopularMovieApplication popApp;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
-    private ProgressBar mLoadingIndicator;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private static final int SETTINGS = 2;
+
+    @BindView(R.id.toolbar)
+    Toolbar mToolbar;
+
+    @BindView(R.id.progressBar)
+    ProgressBar mLoadingIndicator;
+
+    @BindView(R.id.rv_movie_list)
+    RecyclerView mRecyclerView;
+
+    private PopularMoviesAdapter mAdapter;
     private boolean showingIndicator;
-    private int currentPageNum = 0;
+
+
+    @OnClick(R.id.refresh_button)
+    void refresh() {
+        hideReloadButton();
+        mAdapter.refresh();
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Application app = getApplication();
-        if (app instanceof PopularMovieApplication) {
-            popApp = (PopularMovieApplication) app;
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
         }
-
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        ButterKnife.bind(this);
+        setSupportActionBar(mToolbar);
 
-        cacheParams = new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
-        mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.poster_column_size);
-        mImageThumbSpacing = getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
-        cacheParams.setMemCacheSizePercent(0.25f);
-        mLoadingIndicator = (ProgressBar) findViewById(R.id.progressBar);
-
-        findViewById(R.id.refresh_button).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                hideReloadButton();
-                startTask(currentPageNum);
-            }
-        });
+        mAdapter = new PopularMoviesAdapter(this, mRecyclerView);
+        mAdapter.setOnItemClickCallBack(this);
         showIndicator();
 
-        setupLayout();
-        startTask(1);
+        mAdapter.getMovieLoader().addOnLoadCallBack(new MovieLoader.MovieLoaderCallBack() {
+            @Override
+            public void onLoadComplete(Movies.Result result) {
+                hideIndicator();
+            }
 
-
+            @Override
+            public void onLoadError(Movies.Result result) {
+                hideIndicator();
+                ErrorDialog.show(result.getStatusDesc(), getSupportFragmentManager());
+                showReloadButton();
+            }
+        });
+        mAdapter.refresh();
     }
 
     private void showIndicator() {
@@ -119,131 +102,6 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         ///  showingIndicator = false;
     }
 
-    private void setupLayout() {
-        mAdapter = new PopularMoviesAdapter(this);
-        mAdapter.setOnItemClickCallBack(this);
-        final RecyclerView rv = (RecyclerView) findViewById(R.id.rv_movie_list);
-
-        mImageFetcher = new ImageFetcher(MainActivity.this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
-        mImageFetcher.setLoadingImage(R.drawable.post_background);
-        mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
-        mAdapter.setImageFetcher(mImageFetcher);
-
-        final GridLayoutManager mLayoutManager = new GridLayoutManager(this, 3);
-        rv.setLayoutManager(mLayoutManager);
-        mScrollChange = new ScrollChange(mLayoutManager, this);
-        mScrollChange.setImageFetcher(mImageFetcher);
-        rv.addOnScrollListener(mScrollChange);
-        rv.setAdapter(mAdapter);
-        rv.getViewTreeObserver().addOnGlobalLayoutListener(
-                new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        if (mAdapter.getNumColumns() == 0) {
-                            final int numColumns = (int) Math.floor(
-                                    mLayoutManager.getWidth() / (mImageThumbSize + (mImageThumbSpacing * 2)));
-                            if (numColumns > 0) {
-                                final int columnWidth =
-                                        (mLayoutManager.getWidth() / numColumns) - mImageThumbSpacing;
-                                mAdapter.setNumColumns(numColumns);
-                                mLayoutManager.setSpanCount(numColumns);
-                                mImageFetcher.setImageSize(columnWidth);
-                                mAdapter.setItemWidth(columnWidth);
-                                if (BuildConfig.DEBUG) {
-                                    printLog("onCreateView - columnWidth set to %d %d", columnWidth, mImageThumbSize);
-                                }
-                                if (Utils.hasJellyBean()) {
-                                    rv.getViewTreeObserver()
-                                            .removeOnGlobalLayoutListener(this);
-                                } else {
-                                    rv.getViewTreeObserver()
-                                            .removeGlobalOnLayoutListener(this);
-                                }
-                            }
-                        }
-                    }
-                });
-
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        int width = size.x;
-        int height = size.y;
-        Log.i(getClass().getSimpleName(), String.format(Locale.US, "RecyclerView.Height = %d, RecyclerView.width = %d",
-                mLayoutManager.getHeight(), mLayoutManager.getWidth()));
-        Log.i(getClass().getSimpleName(), String.format(Locale.US, "Height = %d, width = %d",
-                height, width));
-    }
-
-    @Override
-    public void loadMore(final int page_num) {
-        startTask(page_num);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (mImageFetcher != null) {
-            mImageFetcher.setExitTasksEarly(false);
-            mAdapter.notifyDataSetChanged();
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mImageFetcher != null) {
-            mImageFetcher.setPauseWork(false);
-            mImageFetcher.setExitTasksEarly(true);
-            mImageFetcher.flushCache();
-        }
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mImageFetcher != null && popApp != null && !popApp.isCacheEnable()) {
-            mImageFetcher.clearCache();
-        }
-    }
-
-    void startTask(int page_num) {
-
-        if (requestPermission()) {
-            currentPageNum = page_num;
-            new LoadMovieTask().execute(page_num);
-        }
-    }
-
-    private void printLog(String msg, Object... params) {
-        Log.i(getClass().getSimpleName(), String.format(Locale.US, msg, params));
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-
-        boolean success = false;
-        if (requestCode == REQUEST_PERMISSIONS) {
-            if (grantResults.length == PERMISSIONS.length) {
-                success = true;
-                for (int result : grantResults) {
-                    if (result != PackageManager.PERMISSION_GRANTED) {
-                        success = false;
-                        break;
-                    }
-                }
-            }
-            if (!success) {
-                ErrorDialog
-                        .show(getResources().getString(R.string.permission_request), getSupportFragmentManager());
-            } else {
-                startTask(1);
-            }
-        }
-
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SETTINGS) {
@@ -254,47 +112,8 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
     }
 
     private void reload() {
-        mAdapter.clearAdapter();
-        mScrollChange.reset();
-        startTask(1);
+        mAdapter.reload();
     }
-
-    private boolean hasPermissionsGranted(String[] permissions) {
-        for (String permission : permissions) {
-            if (hasPermissionGranted(permission)) return false;
-        }
-        return true;
-    }
-
-    private boolean hasPermissionGranted(String permission) {
-        return ActivityCompat.checkSelfPermission(this, permission)
-                != PackageManager.PERMISSION_GRANTED;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private boolean shouldShowRequestPermissionRationale(String[] permissions) {
-        for (String permission : permissions) {
-            if (shouldShowRequestPermissionRationale(permission)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean requestPermission() {
-        if (!hasPermissionsGranted(PERMISSIONS)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (shouldShowRequestPermissionRationale(PERMISSIONS)) {
-                    ConfirmationDialog.newInstance(PERMISSIONS).show(getSupportFragmentManager(), "");
-                } else {
-                    requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
-                }
-                return false;
-            }
-        }
-        return true;
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -335,42 +154,16 @@ public class MainActivity extends AppCompatActivity implements LoadMoreCallback,
         }
     }
 
-    private class LoadMovieTask extends AsyncTask<Integer, Void, Movies> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-
-        @Override
-        protected void onPostExecute(Movies movies) {
-            super.onPostExecute(movies);
-            hideIndicator();
-            if (movies != null) {
-                mAdapter.addMovieList(movies.list);
-                mScrollChange.setLoading();
-            } else {
-                String text = "<h2>No Network Connection!</h2><br><p>Please confirm you are connected to the Internet</p>";
-                ErrorDialog.show(Html.fromHtml(text).toString(), getSupportFragmentManager());
-                showReloadButton();
-
-            }
-        }
-
-        @Override
-        protected Movies doInBackground(Integer... params) {
-            if (!NetworkUtil.checkConnection(MainActivity.this)) {
-                return null;
-            }
-            Movies movie = new Movies();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            NetworkUtil.getPopularMovies(params[0], movie);
-            return movie;
-        }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mAdapter.onSaveInstanceState(outState);
     }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        mAdapter.onRestoreInstanceState(savedInstanceState);
+    }
+
 }

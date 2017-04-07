@@ -12,10 +12,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.rmhub.popularmovies.R;
@@ -30,15 +30,32 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MovieDetailsActivity extends AppCompatActivity implements ImageWorker.OnImageLoadedListener {
 
     public static final String MOVIES_DETAILS = "details";
-    private static final String IMAGE_CACHE_DIR = "thumbs";
-    ImageCache.ImageCacheParams cacheParams = null;
-    int mImageThumbSize;
+    private static final String IMAGE_CACHE_DIR = "thumbnails";
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
+    @BindView(R.id.movie_plot)
+    TextView moviePlot;
+    @BindView(R.id.movie_release_year)
+    TextView movieReleaseYear;
+    @BindView(R.id.movie_title)
+    TextView movieTitle;
+    @BindView(R.id.movie_rating)
+    TextView movieRating;
+    @BindView(R.id.backdrop_photo)
+    ImageView backdropPhoto;
+    @BindView(R.id.movie_poster)
+    ImageView moviePoster;
+    @BindView(R.id.overview_bg)
+    View overviewBg;
     private GradientDrawable grad;
     private ShapeDrawable shapeDrawable;
-    private Toolbar toolbar;
+    private ImageFetcher mImageFetcher;
 
     public Palette.Swatch getDominantColor(Palette bitmap) {
         List<Palette.Swatch> swatchesTemp = (bitmap).getSwatches();
@@ -61,38 +78,53 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         }
 
         setContentView(R.layout.activity_movie_details);
+        ButterKnife.bind(this);
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        cacheParams =
-                new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
-        mImageThumbSize = getResources().getDimensionPixelSize(R.dimen.poster_thumbnail_size_w92);
-        cacheParams.setMemCacheSizePercent(0.25f);
 
-        ImageFetcher imageFetcher = new ImageFetcher(this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size) * 2);
-        imageFetcher.setLoadingImage(R.drawable.post_background);
-        imageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
         MovieDetails details = getIntent().getParcelableExtra(MOVIES_DETAILS);
 
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            findViewById(R.id.movie_poster).setTransitionName(String.format(Locale.US, "poster_%d", details.getId()));
+            (moviePlot).setTransitionName(String.format(Locale.US, "poster_%d", details.getId()));
         }
 
-        ((TextView) findViewById(R.id.movie_plot)).setText(String.valueOf(details.getOverview()));
-        ((TextView) findViewById(R.id.movie_release_year)).setText(details.getRelease_date());
-        ((TextView) findViewById(R.id.movie_title)).setText(String.valueOf(details.getTitle()));
-        ((TextView) findViewById(R.id.movie_rating)).setText(String.format(Locale.US, "%.1f/%d", details.getVote_average(), 10));
+        (moviePlot).setText(String.valueOf(details.getOverview()));
+        (movieReleaseYear).setText(details.getRelease_date());
+        (movieTitle).setText(String.valueOf(details.getTitle()));
+        (movieRating).setText(String.format(Locale.US, "%.1f/%d", details.getVote_average(), 10));
 
-        imageFetcher.loadImage(details.getBackdrop_path(), (ImageView) findViewById(R.id.backdrop_photo), this);
+        ImageCache.ImageCacheParams cacheParams = new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
+        cacheParams.setMemCacheSizePercent(0.25f);
+        mImageFetcher = new ImageFetcher(this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
+        mImageFetcher.setLoadingImage(R.drawable.post_background);
+        mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
+      /*  Glide
+                .with(this)
+                .load(details.getBackdrop_path())
+                .centerCrop()
+                .placeholder(R.drawable.post_background)
+                .crossFade()
+                .into(backdropPhoto);
+        Glide
+                .with(this)
+                .load(details.getPoster_path())
+                .centerCrop()
 
-        imageFetcher.loadImage(details.getPoster_path(), (ImageView) findViewById(R.id.movie_poster));
-        findViewById(R.id.movie_poster).getViewTreeObserver().addOnPreDrawListener(
+                .placeholder(R.drawable.post_background)
+                .crossFade()
+                .into(moviePoster);
+        */
+        mImageFetcher.loadImage(details.getPoster_path(), moviePoster,this);
+        mImageFetcher.loadImage(details.getBackdrop_path(), backdropPhoto);
+
+        (moviePoster).getViewTreeObserver().addOnPreDrawListener(
                 new ViewTreeObserver.OnPreDrawListener() {
                     @Override
                     public boolean onPreDraw() {
-                        findViewById(R.id.movie_poster).getViewTreeObserver().removeOnPreDrawListener(this);
+                        moviePoster.getViewTreeObserver().removeOnPreDrawListener(this);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             postponeEnterTransition();
@@ -103,13 +135,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
                     }
                 }
         );
-
-        toolbar.setBackgroundColor(details.getRgb());
-        toolbar.setTitleTextColor(details.getTitleTextColor());
-
-        LinearLayout container = ((LinearLayout) findViewById(R.id.overview_contain));
-        int height = container.getHeight();
-        int width = container.getWidth();
+        int height = overviewBg.getHeight();
+        int width = overviewBg.getWidth();
 
         RectShape rect = new RectShape();
         rect.resize(width, height);
@@ -128,9 +155,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         LayerDrawable bg = new LayerDrawable(layers);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            container.setBackground(bg);
+            overviewBg.setBackground(bg);
         } else {
-            container.setBackgroundDrawable(bg);
+            overviewBg.setBackgroundDrawable(bg);
         }
     }
 
@@ -145,19 +172,12 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onImageLoaded(Bitmap success, ImageView view) {
-        if (success != null) {
-            createPaletteAsync(success, (MovieDetails) view.getTag());
-        }
-    }
 
     public void createPaletteAsync(Bitmap bitmap, final MovieDetails details) {
 
         Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
             public void onGenerated(Palette p) {
                 // Use generated instance
-                LinearLayout container = ((LinearLayout) findViewById(R.id.overview_contain));
 
                 Palette.Swatch vibrantSwatch = getDominantColor(p);
                 if (vibrantSwatch != null) {
@@ -170,9 +190,9 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
                     toolbar.setTitleTextColor(vibrantSwatch.getTitleTextColor());
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        container.setBackground(bg);
+                        overviewBg.setBackground(bg);
                     } else {
-                        container.setBackgroundDrawable(bg);
+                        overviewBg.setBackgroundDrawable(bg);
                     }
                 }
 
@@ -189,4 +209,8 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         return null;
     }
 
+    @Override
+    public void onImageLoaded(Bitmap success, ImageView view) {
+        createPaletteAsync(success,null);
+    }
 }

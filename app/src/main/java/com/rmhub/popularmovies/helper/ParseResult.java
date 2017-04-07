@@ -1,5 +1,7 @@
 package com.rmhub.popularmovies.helper;
 
+import com.rmhub.popularmovies.utils.NetworkUtil;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +16,7 @@ import java.util.List;
  * .
  */
 
-public class ParserResult {
+public class ParseResult {
     public static List<MovieDetails> parseMovieList(String result) {
         try {
             JSONObject obj = new JSONObject(result);
@@ -43,6 +45,7 @@ public class ParserResult {
     private static MovieDetails parseMovie(JSONObject obj)
             throws JSONException {
         MovieDetails movieDetails = new MovieDetails();
+        movieDetails.setCategory(NetworkUtil.movie_category);
         if (obj.has("adult")) {
             movieDetails.setAdult(obj.getBoolean("adult"));
         }
@@ -56,7 +59,7 @@ public class ParserResult {
             movieDetails.setBudget(obj.getLong("poster_path"));
         }
         if (obj.has("genres")) {
-            movieDetails.setGenres(parseGenre(obj.getJSONArray("genres")));
+            movieDetails.setReviews(parseReview(obj.getJSONArray("genres")));
         }
         if (obj.has("homepage")) {
             movieDetails.setHomepage(obj.getString("homepage"));
@@ -116,34 +119,58 @@ public class ParserResult {
         return movieDetails;
     }
 
-    private static List<Genre> parseGenre(JSONArray genres)
+    private static List<Review> parseReview(JSONArray genres)
             throws JSONException {
-        List<Genre> genreList = new ArrayList<>();
+        List<Review> reviewList = new ArrayList<>();
         for (int i = 0, n = genres.length(); i < n; i++) {
-            genreList.add(parseGenre(genres.getJSONObject(i)));
+            reviewList.add(parseReview(genres.getJSONObject(i)));
         }
 
-        return genreList;
+        return reviewList;
     }
 
-    private static Genre parseGenre(JSONObject genres)
+    private static Review parseReview(JSONObject genres)
             throws JSONException {
-        Genre genre = new Genre();
+        Review review = new Review();
         if (genres.has("id")) {
-            genre.setId(genres.getInt("id"));
+            review.setId(genres.getString("id"));
         }
-        if (genres.has("name")) {
-            genre.setName(genres.getString("name"));
+        if (genres.has("author")) {
+            review.setAuthor(genres.getString("name"));
         }
-        return genre;
+        if (genres.has("content")) {
+            review.setContent(genres.getString("content"));
+        }
+        return review;
     }
 
-    public static List<Genre> parseGenre(String result) {
+    public static List<Review> parseReview(String result) {
         try {
-            return parseGenre(new JSONObject(result).getJSONArray("genres"));
+            return parseReview(new JSONObject(result).getJSONArray("genres"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void parseMovieResult(String result, Movies.Result resultCallBack) {
+
+        try {
+            JSONObject obj = new JSONObject(result);
+            if (obj.has("total_results")) {
+                resultCallBack.setTotalResult(obj.getInt("total_results"));
+            }
+            if (obj.has("total_pages")) {
+                resultCallBack.setTotalPages(obj.getInt("total_pages"));
+            }
+            if (obj.has("page")) {
+                resultCallBack.setNextPage(obj.getInt("page"));
+            }
+
+            resultCallBack.setMovieList(ParseResult.parseMovieList(result));
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }

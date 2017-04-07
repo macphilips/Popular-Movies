@@ -17,4 +17,27 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="BaseTextStyle">
+
+    </style>
+
+    <style name="heading_1" parent="BaseTextStyle">
+        <item name="android:textSize">@dimen/text_heading1</item>
+    </style>
+
+    <style name="heading_2">
+        <item name="android:textSize">@dimen/text_heading2</item>
+    </style>
+
+    <style name="heading_3">
+        <item name="android:textSize">@dimen/text_heading3</item>
+    </style>
+
+    <style name="heading_4">
+        <item name="android:textSize">@dimen/text_heading4</item>
+    </style>
+
+    <style name="normal">
+        <item name="android:textSize">@dimen/text_size</item>
+    </style>
 </resources>

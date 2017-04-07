@@ -30,31 +30,39 @@ public class NetworkUtil {
     private static final String MOVIE_ENDPOINT_URL = API_URL + "/movie";
     private static final String POPULAR_MOVIE_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/popular";
     private static final String TOP_RATED_MOVIES_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/top_rated";
-    private static final String GENRE_LIST_ENDPOINT_URL = API_URL + "/genre/movie/list";
+    private static final String GENRE_LIST_ENDPOINT_URL = API_URL + "/genre/movie/movieList";
     public static String DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
+    public static int movie_category = 0;
 
 
-    public static void getPopularMovies(int page_num, ResultCallback callback) {
-        String url = String.format(Locale.US,
+    public static String buildMoviesURL(int page_num) {
+        return String.format(Locale.US,
                 "%s?api_key=%s&page=%d", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
-        fetchResult(url, callback);
     }
 
     public static void setDefaultEndpointUrl(String key) {
         switch (key) {
             case "popular":
                 DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
+                movie_category = 1;
                 break;
             case "top_rated":
                 DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
+                movie_category = 2;
                 break;
         }
     }
 
 
-    public static void getGenreMovies(int page_num, ResultCallback callback) {
+    public static void buildMovieReviewURL(int page_num, ResultCallback callback) {
         String url = String.format(Locale.US,
                 "%s?api_key=%s&page=%d", GENRE_LIST_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
+        fetchResult(url, callback);
+    }
+
+    public static void buildMovieRecommendation(MovieDetails details, ResultCallback callback) {
+        String url = String.format(Locale.US,
+                "%s/%d?api_key=%s", MOVIE_ENDPOINT_URL, details.getId(), MovieDBApiKey.API_KEY);
         fetchResult(url, callback);
     }
 
@@ -65,7 +73,7 @@ public class NetworkUtil {
     }
 
     @Nullable
-    private static void fetchResult(String url_string, ResultCallback callback) {
+    public static void fetchResult(String url_string, ResultCallback callback) {
         URL url;
         String result = "";
         BufferedReader in;
@@ -104,7 +112,7 @@ public class NetworkUtil {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnectedOrConnecting()) {
-         //   Toast.makeText(context, com.rmhub.simpleimagefetcher.R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
+            //   Toast.makeText(context, com.rmhub.simpleimagefetcher.R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
 
             Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
             return false;

@@ -6,7 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"
+        />
 
     <application
         android:name=".PopularMovieApplication"
@@ -33,6 +34,10 @@
             android:name=".ui.MovieDetailsActivity"
             android:label="@string/title_activity_movie_details"
             android:theme="@style/AppTheme.NoActionBar" />
+        <provider
+            android:name=".provider.MovieProvider"
+            android:authorities="com.rmhub.popularmovies"
+            android:exported="false" />
     </application>
 
 </manifest>

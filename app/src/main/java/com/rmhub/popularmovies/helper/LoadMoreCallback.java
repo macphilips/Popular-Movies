@@ -8,5 +8,5 @@ package com.rmhub.popularmovies.helper;
  */
 
 public interface LoadMoreCallback {
-    void loadMore(int page_num);
+    void loadMore();
 }

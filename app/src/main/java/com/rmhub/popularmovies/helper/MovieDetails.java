@@ -1,7 +1,11 @@
 package com.rmhub.popularmovies.helper;
 
+import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.rmhub.popularmovies.provider.Contract;
 
 import java.util.List;
 
@@ -29,24 +33,22 @@ public class MovieDetails implements Parcelable {
     private static final String POSTER_SIZE_SMALL = "/w92/";
     private static final String POSTER_SIZE = "/w185/";
     private static final String BACKDROP_SIZE = "/w780/";
-    private List<Genre> genres;
+    private List<Review> reviews;
     private boolean adult, video;
     private String backdrop_path, belongs_to_collection,
             homepage, imdb_id, original_language, original_title, overview,
             poster_path, release_date, status,
             tagline, title;
     private long budget, revenue;
-    private int id, runtime, vote_count;
+    private int id, runtime, vote_count, favorite, category;
     private double popularity, vote_average;
-    private int rgb;
-    private int titleTextColor;
 
     public MovieDetails() {
 
     }
 
     protected MovieDetails(Parcel in) {
-        genres = in.createTypedArrayList(Genre.CREATOR);
+        reviews = in.createTypedArrayList(Review.CREATOR);
         adult = in.readByte() != 0;
         video = in.readByte() != 0;
         backdrop_path = in.readString();
@@ -66,15 +68,41 @@ public class MovieDetails implements Parcelable {
         id = in.readInt();
         runtime = in.readInt();
         vote_count = in.readInt();
+        favorite = in.readInt();
+        category = in.readInt();
         popularity = in.readDouble();
         vote_average = in.readDouble();
-        rgb = in.readInt();
-        titleTextColor = in.readInt();
+    }
+
+    public static MovieDetails buildFrom(Cursor cursor) {
+        MovieDetails details = new MovieDetails();
+        try {
+            details.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_TITLE)));
+
+            details.setRelease_date(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_RELEASE_DATE)));
+
+            details.setVote_average(Double.parseDouble(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_AVERAGE_VOTE))));
+
+            details.setPoster_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_POSTER_URL)));
+
+            details.setBackdrop_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_BACKDROP_URL)));
+
+            details.setOverview(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_PLOT)));
+
+            details.setId((cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_ID))));
+
+            details.setFavorite(cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.FAVORITE)));
+
+
+        } catch (CursorIndexOutOfBoundsException exception) {
+            exception.printStackTrace();
+        }
+        return details;
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedList(genres);
+        dest.writeTypedList(reviews);
         dest.writeByte((byte) (adult ? 1 : 0));
         dest.writeByte((byte) (video ? 1 : 0));
         dest.writeString(backdrop_path);
@@ -94,10 +122,10 @@ public class MovieDetails implements Parcelable {
         dest.writeInt(id);
         dest.writeInt(runtime);
         dest.writeInt(vote_count);
+        dest.writeInt(favorite);
+        dest.writeInt(category);
         dest.writeDouble(popularity);
         dest.writeDouble(vote_average);
-        dest.writeInt(rgb);
-        dest.writeInt(titleTextColor);
     }
 
     @Override
@@ -105,12 +133,12 @@ public class MovieDetails implements Parcelable {
         return 0;
     }
 
-    public List<Genre> getGenres() {
-        return genres;
+    public List<Review> getReviews() {
+        return reviews;
     }
 
-    public void setGenres(List<Genre> genres) {
-        this.genres = genres;
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
     }
 
     public boolean isAdult() {
@@ -285,19 +313,19 @@ public class MovieDetails implements Parcelable {
         this.vote_average = vote_average;
     }
 
-    public int getRgb() {
-        return rgb;
+    public int getFavorite() {
+        return favorite;
     }
 
-    public void setRgb(int rgb) {
-        this.rgb = rgb;
+    public void setFavorite(int favorite) {
+        this.favorite = favorite;
     }
 
-    public int getTitleTextColor() {
-        return titleTextColor;
+    public int getCategory() {
+        return category;
     }
 
-    public void setTitleTextColor(int titleTextColor) {
-        this.titleTextColor = titleTextColor;
+    public void setCategory(int category) {
+        this.category = category;
     }
 }

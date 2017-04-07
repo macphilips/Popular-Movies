@@ -43,11 +43,6 @@ public class Utils {
             Log.e(TAG, "checkConnection - no connection found");
         }
     }
-
-
-
-
-
     public static boolean hasFroyo() {
         // Can use static final constants like FROYO, declared in later versions
         // of the OS since they are inlined at compile time. This is guaranteed behavior.
