@@ -51,8 +51,6 @@ public class ImageFetcher extends ImageResizer {
     private boolean mHttpDiskCacheStarting = true;
     private OnDownloadCompleteListener onDownloadCompleteListener;
 
-
-
     /**
      * Initialize providing a target image width and height for the processing images.
      *
@@ -273,7 +271,6 @@ public class ImageFetcher extends ImageResizer {
     protected Bitmap processBitmap(Object data) {
         return processBitmap(String.valueOf(data));
     }
-
 
     /**
      * Download a bitmap from a URL and write the content to an output stream.

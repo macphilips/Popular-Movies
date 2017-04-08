@@ -16,31 +16,20 @@ import java.util.List;
  * .
  */
 
-public class MovieDetails implements Parcelable {
+public class MovieDetails implements Parcelable{
 
-    public static final Creator<MovieDetails> CREATOR = new Creator<MovieDetails>() {
-        @Override
-        public MovieDetails createFromParcel(Parcel in) {
-            return new MovieDetails(in);
-        }
-
-        @Override
-        public MovieDetails[] newArray(int size) {
-            return new MovieDetails[size];
-        }
-    };
     private static final String BASE_PATH = "https://image.tmdb.org/t/p";
     private static final String POSTER_SIZE_SMALL = "/w92/";
     private static final String POSTER_SIZE = "/w185/";
     private static final String BACKDROP_SIZE = "/w780/";
-    private List<Review> reviews;
+    private List<ReviewDetails> reviewDetails;
     private boolean adult, video;
     private String backdrop_path, belongs_to_collection,
             homepage, imdb_id, original_language, original_title, overview,
             poster_path, release_date, status,
             tagline, title;
     private long budget, revenue;
-    private int id, runtime, vote_count, favorite, category;
+    private int movieID, runtime, vote_count, favorite, category;
     private double popularity, vote_average;
 
     public MovieDetails() {
@@ -48,7 +37,7 @@ public class MovieDetails implements Parcelable {
     }
 
     protected MovieDetails(Parcel in) {
-        reviews = in.createTypedArrayList(Review.CREATOR);
+        reviewDetails = in.createTypedArrayList(ReviewDetails.CREATOR);
         adult = in.readByte() != 0;
         video = in.readByte() != 0;
         backdrop_path = in.readString();
@@ -65,44 +54,20 @@ public class MovieDetails implements Parcelable {
         title = in.readString();
         budget = in.readLong();
         revenue = in.readLong();
-        id = in.readInt();
+        movieID = in.readInt();
         runtime = in.readInt();
         vote_count = in.readInt();
         favorite = in.readInt();
         category = in.readInt();
         popularity = in.readDouble();
         vote_average = in.readDouble();
-    }
-
-    public static MovieDetails buildFrom(Cursor cursor) {
-        MovieDetails details = new MovieDetails();
-        try {
-            details.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_TITLE)));
-
-            details.setRelease_date(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_RELEASE_DATE)));
-
-            details.setVote_average(Double.parseDouble(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_AVERAGE_VOTE))));
-
-            details.setPoster_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_POSTER_URL)));
-
-            details.setBackdrop_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_BACKDROP_URL)));
-
-            details.setOverview(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_PLOT)));
-
-            details.setId((cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_ID))));
-
-            details.setFavorite(cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.FAVORITE)));
 
 
-        } catch (CursorIndexOutOfBoundsException exception) {
-            exception.printStackTrace();
-        }
-        return details;
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedList(reviews);
+        dest.writeTypedList(reviewDetails);
         dest.writeByte((byte) (adult ? 1 : 0));
         dest.writeByte((byte) (video ? 1 : 0));
         dest.writeString(backdrop_path);
@@ -119,13 +84,14 @@ public class MovieDetails implements Parcelable {
         dest.writeString(title);
         dest.writeLong(budget);
         dest.writeLong(revenue);
-        dest.writeInt(id);
+        dest.writeInt(movieID);
         dest.writeInt(runtime);
         dest.writeInt(vote_count);
         dest.writeInt(favorite);
         dest.writeInt(category);
         dest.writeDouble(popularity);
         dest.writeDouble(vote_average);
+
     }
 
     @Override
@@ -133,12 +99,51 @@ public class MovieDetails implements Parcelable {
         return 0;
     }
 
-    public List<Review> getReviews() {
-        return reviews;
+    public static final Creator<MovieDetails> CREATOR = new Creator<MovieDetails>() {
+        @Override
+        public MovieDetails createFromParcel(Parcel in) {
+            return new MovieDetails(in);
+        }
+
+        @Override
+        public MovieDetails[] newArray(int size) {
+            return new MovieDetails[size];
+        }
+    };
+
+    public static MovieDetails buildFrom(Cursor cursor) {
+        MovieDetails details = new MovieDetails();
+        try {
+            details.setTitle(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_TITLE)));
+
+            details.setRelease_date(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_RELEASE_DATE)));
+
+            details.setVote_average(Double.parseDouble(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_AVERAGE_VOTE))));
+
+            details.setPoster_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_POSTER_URL)));
+
+            details.setBackdrop_path(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_BACKDROP_URL)));
+
+            details.setOverview(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_PLOT)));
+
+            details.setMovieID((cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_ID))));
+
+            details.setFavorite(cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.FAVORITE)));
+
+
+        } catch (CursorIndexOutOfBoundsException exception) {
+            exception.printStackTrace();
+        }
+        return details;
     }
 
-    public void setReviews(List<Review> reviews) {
-        this.reviews = reviews;
+
+    public List<ReviewDetails> getReviewDetails() {
+        return reviewDetails;
+    }
+
+    public void setReviewDetails(List<ReviewDetails> reviewDetails) {
+        this.reviewDetails = reviewDetails;
     }
 
     public boolean isAdult() {
@@ -265,12 +270,12 @@ public class MovieDetails implements Parcelable {
         this.budget = budget;
     }
 
-    public int getId() {
-        return id;
+    public int getMovieID() {
+        return movieID;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setMovieID(int movieID) {
+        this.movieID = movieID;
     }
 
     public int getRuntime() {
@@ -327,5 +332,16 @@ public class MovieDetails implements Parcelable {
 
     public void setCategory(int category) {
         this.category = category;
+    }
+
+    @Override
+    public String toString() {
+        return "MovieDetails{" +
+                "backdrop_path='" + backdrop_path + '\'' +
+                ", poster_path='" + poster_path + '\'' +
+                ", title='" + title + '\'' +
+                ", movieID=" + movieID +
+                ", vote_average=" + vote_average +
+                '}';
     }
 }

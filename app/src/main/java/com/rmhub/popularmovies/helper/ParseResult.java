@@ -59,13 +59,13 @@ public class ParseResult {
             movieDetails.setBudget(obj.getLong("poster_path"));
         }
         if (obj.has("genres")) {
-            movieDetails.setReviews(parseReview(obj.getJSONArray("genres")));
+            movieDetails.setReviewDetails(parseReview(obj.getJSONArray("genres")));
         }
         if (obj.has("homepage")) {
             movieDetails.setHomepage(obj.getString("homepage"));
         }
         if (obj.has("id")) {
-            movieDetails.setId(obj.getInt("id"));
+            movieDetails.setMovieID(obj.getInt("id"));
         }
         if (obj.has("imdb_id")) {
             movieDetails.setImdb_id(obj.getString("imdb_id"));
@@ -119,32 +119,32 @@ public class ParseResult {
         return movieDetails;
     }
 
-    private static List<Review> parseReview(JSONArray genres)
+    private static List<ReviewDetails> parseReview(JSONArray genres)
             throws JSONException {
-        List<Review> reviewList = new ArrayList<>();
+        List<ReviewDetails> reviewDetailsList = new ArrayList<>();
         for (int i = 0, n = genres.length(); i < n; i++) {
-            reviewList.add(parseReview(genres.getJSONObject(i)));
+            reviewDetailsList.add(parseReview(genres.getJSONObject(i)));
         }
 
-        return reviewList;
+        return reviewDetailsList;
     }
 
-    private static Review parseReview(JSONObject genres)
+    private static ReviewDetails parseReview(JSONObject genres)
             throws JSONException {
-        Review review = new Review();
+        ReviewDetails reviewDetail = new ReviewDetails();
         if (genres.has("id")) {
-            review.setId(genres.getString("id"));
+            reviewDetail.setId(genres.getString("id"));
         }
         if (genres.has("author")) {
-            review.setAuthor(genres.getString("name"));
+            reviewDetail.setAuthor(genres.getString("name"));
         }
         if (genres.has("content")) {
-            review.setContent(genres.getString("content"));
+            reviewDetail.setContent(genres.getString("content"));
         }
-        return review;
+        return reviewDetail;
     }
 
-    public static List<Review> parseReview(String result) {
+    public static List<ReviewDetails> parseReview(String result) {
         try {
             return parseReview(new JSONObject(result).getJSONArray("genres"));
         } catch (JSONException e) {

@@ -71,6 +71,7 @@ public class ImageCache {
     private static final boolean DEFAULT_MEM_CACHE_ENABLED = true;
     private static final boolean DEFAULT_DISK_CACHE_ENABLED = true;
     private static final boolean DEFAULT_INIT_DISK_CACHE_ON_CREATE = false;
+
     private final Object mDiskCacheLock = new Object();
     private DiskLruCache mDiskLruCache;
     private LruCache<String, BitmapDrawable> mMemoryCache;
@@ -113,7 +114,6 @@ public class ImageCache {
             imageCache = new ImageCache(cacheParams);
             mRetainFragment.setObject(imageCache);
         }
-
         return imageCache;
     }
 

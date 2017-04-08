@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -15,9 +16,9 @@ import android.widget.ProgressBar;
 
 import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.helper.MovieDetails;
-import com.rmhub.popularmovies.helper.MovieLoader;
-import com.rmhub.popularmovies.helper.Movies;
-import com.rmhub.popularmovies.helper.PopularMoviesAdapter;
+import com.rmhub.popularmovies.helper.Loader;
+import com.rmhub.popularmovies.helper.MoviesAdapter;
+import com.rmhub.popularmovies.helper.ResultCallback;
 import com.rmhub.popularmovies.utils.Utils;
 
 import java.util.Locale;
@@ -39,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.rv_movie_list)
     RecyclerView mRecyclerView;
 
-    private PopularMoviesAdapter mAdapter;
+    private MoviesAdapter mAdapter;
     private boolean showingIndicator;
 
 
@@ -59,21 +60,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(mToolbar);
-
-        mAdapter = new PopularMoviesAdapter(this, mRecyclerView);
+        MoviesAdapter.Options opt = new MoviesAdapter.Options();
+        opt.roughItemWidthSize = getResources().getDimensionPixelSize(R.dimen.poster_column_size);
+        mRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        mAdapter = new MoviesAdapter(this, mRecyclerView, opt);
         mAdapter.setOnItemClickCallBack(this);
         showIndicator();
-
-        mAdapter.getMovieLoader().addOnLoadCallBack(new MovieLoader.MovieLoaderCallBack() {
+        mAdapter.getMovieLoader().addOnLoadCallBack(new Loader.MovieLoaderCallBack() {
             @Override
-            public void onLoadComplete(Movies.Result result) {
+            public void onLoadComplete(ResultCallback result) {
                 hideIndicator();
             }
 
             @Override
-            public void onLoadError(Movies.Result result) {
+            public void onLoadError(ResultCallback  result) {
                 hideIndicator();
-                ErrorDialog.show(result.getStatusDesc(), getSupportFragmentManager());
+                //ErrorDialog.show(result.getStatusDesc(), getSupportFragmentManager());
                 showReloadButton();
             }
         });
@@ -146,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (Utils.hasJellyBean()) {
                 ActivityOptionsCompat options = ActivityOptionsCompat.
                         makeSceneTransitionAnimation(this, v,
-                                String.format(Locale.US, "poster_%d", ((MovieDetails) tag).getId()));
+                                String.format(Locale.US, "poster_%d", ((MovieDetails) tag).getMovieID()));
                 startActivity(i, options.toBundle());
             } else {
                 startActivity(i);

@@ -1,5 +1,7 @@
 package com.rmhub.popularmovies.helper;
 
+import com.rmhub.popularmovies.utils.NetworkStatus;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +27,16 @@ public class Movies {
         public String query() {
             return url;
         }
+
+        @Override
+        public String resultCallBackName() {
+            return Result.class.getName();
+        }
+
+
     }
 
-    public static class Result implements ResultCallback {
+    public static class Result extends ResultCallback {
 
         private List<MovieDetails> movieList;
         private String statusDesc = "";

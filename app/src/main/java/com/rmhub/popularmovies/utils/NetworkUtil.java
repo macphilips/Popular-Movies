@@ -37,7 +37,7 @@ public class NetworkUtil {
 
     public static String buildMoviesURL(int page_num) {
         return String.format(Locale.US,
-                "%s?api_key=%s&page=%d", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
+                "%s?api_key=%s&page=%d&language=en-US", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
     }
 
     public static void setDefaultEndpointUrl(String key) {
@@ -54,21 +54,29 @@ public class NetworkUtil {
     }
 
 
-    public static void buildMovieReviewURL(int page_num, ResultCallback callback) {
-        String url = String.format(Locale.US,
-                "%s?api_key=%s&page=%d", GENRE_LIST_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
-        fetchResult(url, callback);
+    public static String buildMovieReviewURL(MovieDetails details, int page_num) {
+        return String.format(Locale.US,
+                "%s/%d/reviews?api_key=%s&page=%d&language=en-US", MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+
     }
 
-    public static void buildMovieRecommendation(MovieDetails details, ResultCallback callback) {
-        String url = String.format(Locale.US,
-                "%s/%d?api_key=%s", MOVIE_ENDPOINT_URL, details.getId(), MovieDBApiKey.API_KEY);
-        fetchResult(url, callback);
+    public static String buildMovieRecommendation(MovieDetails details, int page_num) {
+        return String.format(Locale.US,
+                "%s/%d/recommendations?api_key=%s&page=%d&language=en-US",
+                MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+
+    }
+
+    public static String buildMovieVideos(MovieDetails details, int page_num) {
+        return String.format(Locale.US,
+                "%s/%d/videos?api_key=%s&page=%d&language=en-US",
+                MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+
     }
 
     public static void getMovieDetails(MovieDetails details, ResultCallback callback) {
         String url = String.format(Locale.US,
-                "%s/%d?api_key=%s", MOVIE_ENDPOINT_URL, details.getId(), MovieDBApiKey.API_KEY);
+                "%s/%d?api_key=%s", MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY);
         fetchResult(url, callback);
     }
 

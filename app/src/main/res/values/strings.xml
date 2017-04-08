@@ -14,6 +14,20 @@
     </string-array>
     <string name="sort_key">sort_list</string>
 
+
+    <string name="loader_by_title">Imager Loader</string>
+    <string-array name="pref_loader_list_titles">
+        <item>Simple Image Fetcher</item>
+        <item>Glide</item>
+        <item>Picasso</item>
+    </string-array>
+    <string-array name="pref_loader_list_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string name="loader_key">loader_list</string>
+
     <string name="title_activity_main">MainActivity</string>
     <string name="permission_request">Require Permission to use this feature</string>
     <string name="title_activity_movie_details">MovieDetailsActivity</string>
@@ -48,7 +62,8 @@
     <string name="singapore">Singapore</string>
     <string name="plot">Plot</string>
     <string name="play_trailer">Play Trailer</string>
-    <string name="review">Reviews</string>
+    <string name="reviewDetail">Reviews</string>
     <string name="recommendation">Recommendations</string>
     <string name="no_network_connection_toast">No Network Connection</string>
+    <string name="loader_default_value">0</string>
 </resources>

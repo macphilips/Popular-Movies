@@ -35,8 +35,8 @@ import java.io.FileDescriptor;
  */
 public class ImageResizer extends ImageWorker {
     private static final String TAG = "ImageResizer";
-    protected int mImageWidth;
-    protected int mImageHeight;
+    protected int mImageWidth = -1;
+    protected int mImageHeight = -1;
 
 
     /**
@@ -148,12 +148,19 @@ public class ImageResizer extends ImageWorker {
         int height = options.outHeight;
         int width = options.outWidth;
 
-        float ratio = (float) width / reqWidth;
-        reqHeight = (int) (height / ratio);
+        if ( reqWidth > 0) {
+            float ratio = (float) width / reqWidth;
+            reqHeight = (int) (height / ratio);
+        } else if (reqHeight > 0) {
+            float ratio = (float) height / reqHeight;
+            reqWidth = (int) (width / ratio);
+        }
+
+        Log.d(TAG, "reqHeight = " + reqHeight + " reqWidth = " + reqWidth);
 
         // Calculate inSampleSize
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-         // Decode bitmap with inSampleSize set
+        // Decode bitmap with inSampleSize set
         options.inJustDecodeBounds = false;
 
         // If we're running on Honeycomb or newer, try to use inBitmap
@@ -287,6 +294,14 @@ public class ImageResizer extends ImageWorker {
      */
     public void setImageSize(int size) {
         setImageSize(size, size);
+    }
+
+    public void setImageHeight(int size) {
+        setImageSize(-1, size);
+    }
+
+    public void setImageWidth(int size) {
+        setImageSize(size, -1);
     }
 
     /**

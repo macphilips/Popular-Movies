@@ -7,6 +7,6 @@ package com.rmhub.popularmovies.helper;
  * .
  */
 
-public interface ResultCallback {
-    void onFetchResult(String result);
+public abstract class ResultCallback {
+  public abstract void onFetchResult(String result);
 }

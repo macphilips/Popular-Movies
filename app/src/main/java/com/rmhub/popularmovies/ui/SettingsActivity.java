@@ -100,6 +100,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * @see #sBindPreferenceSummaryToValueListener
      */
     private static void bindPreferenceSummaryToValue(Preference preference) {
+        mState = State.REGISTER;
         // Set the listener to watch for value changes.
         preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
@@ -202,6 +203,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             setHasOptionsMenu(true);
             mState = State.REGISTER;
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.sort_key)));
+            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.loader_key)));
 
         }
 

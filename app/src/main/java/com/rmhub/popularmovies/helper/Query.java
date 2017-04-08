@@ -9,4 +9,5 @@ package com.rmhub.popularmovies.helper;
 
 public interface Query {
     String query();
+    String resultCallBackName();
 }

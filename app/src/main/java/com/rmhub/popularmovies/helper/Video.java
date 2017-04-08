@@ -7,8 +7,8 @@ package com.rmhub.popularmovies.helper;
  * .
  */
 
-public class Review {
-    private Review() {
+public class Video {
+    private Video() {
     }
 
     public static class Query implements com.rmhub.popularmovies.helper.Query {
@@ -33,6 +33,7 @@ public class Review {
 
         @Override
         public void onFetchResult(String result) {
+
         }
     }
 }

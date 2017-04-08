@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
-import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 
 import com.karumi.dexter.Dexter;
@@ -17,7 +16,6 @@ import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.ui.ConfirmationDialog;
 import com.rmhub.popularmovies.ui.ErrorDialog;
 import com.rmhub.popularmovies.utils.NetworkUtil;
-import com.rmhub.popularmovies.utils.ProviderUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,22 +27,29 @@ import java.util.List;
  * .
  */
 
-public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result> {
+public class Loader implements LoaderManager.LoaderCallbacks<ResultCallback> {
     private static final java.lang.String QUERY_ = "query";
-    private static final int MOVIE_LOADER = 22;
+    private static final String RESULT_CALLBACK_NAME = "name";
     private final AppCompatActivity mContext;
+    private int MOVIE_LOADER;
     private List<MovieLoaderCallBack> callBacks = new ArrayList<>();
 
-    public MovieLoader(AppCompatActivity mContext) {
+    public Loader(AppCompatActivity mContext, int id) {
         this.mContext = mContext;
-        mContext.getSupportLoaderManager().initLoader(MOVIE_LOADER, null, this);
+        MOVIE_LOADER = id;
+        mContext.getSupportLoaderManager().initLoader(id, null, this);
     }
 
-    private void startLoader(Movies.Query query) {
+    public Loader(AppCompatActivity mContext) {
+        this(mContext, 101);
+    }
+
+    private void startLoader(Query query) {
         Bundle queryBundle = new Bundle();
         queryBundle.putString(QUERY_, query.query());
+        queryBundle.putString(RESULT_CALLBACK_NAME, query.resultCallBackName());
         LoaderManager loaderManager = mContext.getSupportLoaderManager();
-        Loader<Movies.Result> movieLoader = loaderManager.getLoader(MOVIE_LOADER);
+        android.support.v4.content.Loader<ResultCallback> movieLoader = loaderManager.getLoader(MOVIE_LOADER);
         if (movieLoader == null) {
             loaderManager.initLoader(MOVIE_LOADER, queryBundle, this);
         } else {
@@ -58,13 +63,13 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
         }
     }
 
-    private void complete(Movies.Result result) {
+    private void complete(ResultCallback result) {
         for (MovieLoaderCallBack callBack : callBacks) {
             callBack.onLoadComplete(result);
         }
     }
 
-    private void error(Movies.Result result) {
+    private void error(ResultCallback result) {
         for (MovieLoaderCallBack callBack : callBacks) {
             callBack.onLoadError(result);
         }
@@ -74,7 +79,7 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
         callBacks.add(callBack);
     }
 
-    public void load(final Movies.Query query) {
+    public void load(final Query query) {
 
         Dexter.withActivity(mContext)
                 .withPermissions(
@@ -108,8 +113,8 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
     }
 
     @Override
-    public Loader<Movies.Result> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<Movies.Result>(mContext) {
+    public android.support.v4.content.Loader<ResultCallback> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<ResultCallback>(mContext) {
 
             @Override
             protected void onStartLoading() {
@@ -121,7 +126,7 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
             }
 
             @Override
-            public Movies.Result loadInBackground() {
+            public ResultCallback loadInBackground() {
                 if (!NetworkUtil.checkConnection(mContext)) {
                     return null;
                 }
@@ -129,7 +134,7 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
                 Log.d(getClass().getSimpleName(), "MovieList size " +details.size()+" " + details.isEmpty() );
                 if (details != null && !details.isEmpty()) {
 
-                    Movies.Result movie = new Movies.Result();
+                    ResultCallback movie = new ResultCallback();
                     movie.setStatus(NetworkStatus.SUCCESSFUL);
                     movie.setStatusDesc("Movie was obtained from local database");
                     movie.setMovieList(details);
@@ -137,37 +142,47 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
                 } */
 
                 String url = args.getString(QUERY_);
-                Movies.Result movie = new Movies.Result();
-                NetworkUtil.fetchResult(url, movie);
-                ProviderUtil.insertMovies(mContext, movie.getMovieList());
-                return movie;
+                String objtype = args.getString(RESULT_CALLBACK_NAME);
+                try {
+                    Object movie = Class.forName(objtype).newInstance();
+                    if (movie instanceof ResultCallback) {
+                        NetworkUtil.fetchResult(url, (ResultCallback) movie);
+                        return (ResultCallback) movie;
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                // ResultCallback movie = new ResultCallback();
+                return null;
             }
+
 
         };
     }
 
     @Override
-    public void onLoadFinished(Loader<Movies.Result> loader, final Movies.Result data) {
+    public void onLoadFinished(android.support.v4.content.Loader<ResultCallback> loader, final ResultCallback data) {
         if (data != null) {
             complete(data);
         } else {
-            final Movies.Result result = new Movies.Result();
-            result.setStatusDesc("No Internet Connection");
-            result.setStatus(NetworkStatus.NETWORK_ERROR);
-          //  error(result);
+            //  error(result);
         }
     }
 
     @Override
-    public void onLoaderReset(Loader<Movies.Result> loader) {
+    public void onLoaderReset(android.support.v4.content.Loader<ResultCallback> loader) {
     }
 
     private interface LoaderListener {
         void onLoadStart();
 
-        void onLoadComplete(Movies.Result result);
+        void onLoadComplete(ResultCallback result);
 
-        void onLoadError(Movies.Result result);
+        void onLoadError(ResultCallback result);
     }
 
     public static class MovieLoaderCallBack implements LoaderListener {
@@ -178,12 +193,12 @@ public class MovieLoader implements LoaderManager.LoaderCallbacks<Movies.Result>
         }
 
         @Override
-        public void onLoadComplete(Movies.Result result) {
+        public void onLoadComplete(ResultCallback result) {
 
         }
 
         @Override
-        public void onLoadError(Movies.Result result) {
+        public void onLoadError(ResultCallback result) {
 
         }
     }
