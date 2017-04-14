@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies.utils;
+package com.rmhub.popularmovies.util;
 
 import android.support.annotation.IntDef;
 

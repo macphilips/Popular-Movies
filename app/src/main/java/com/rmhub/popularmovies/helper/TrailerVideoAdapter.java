@@ -1,5 +1,29 @@
 package com.rmhub.popularmovies.helper;
 
+import android.os.Bundle;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.rmhub.popularmovies.R;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.model.Video;
+import com.rmhub.popularmovies.model.VideoDetail;
+import com.rmhub.popularmovies.util.MovieRequest;
+import com.rmhub.popularmovies.util.NetworkUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by MOROLANI on 4/8/2017
  * <p>
@@ -7,5 +31,89 @@ package com.rmhub.popularmovies.helper;
  * .
  */
 
-public class TrailerVideoAdapter {
+public class TrailerVideoAdapter extends PagerAdapter {
+    private final LayoutInflater mInflater;
+    private final List<VideoDetail> videoDetails = new ArrayList<>();
+    private final AppCompatActivity mCtx;
+    private final ViewPager.LayoutParams params;
+    private View.OnClickListener mListener;
+
+
+    public TrailerVideoAdapter(final MovieDetail details, AppCompatActivity context) {
+        mCtx = context;
+        mInflater = LayoutInflater.from(context);
+        params = new ViewPager.LayoutParams();
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieVideos(details, 1));
+        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
+        Video.Query videoQuery = new Video.Query(bundle);
+        NetworkUtil.getInstance(context).fetchResult(videoQuery, Video.Result.class, new MovieRequest.MovieRequestListener<Video.Result>() {
+            @Override
+            public void onResponse(Video.Result result) {
+                super.onResponse(result);
+                addVideoDetail(result.getVideoDetails());
+            }
+        });
+    }
+
+    @Override
+    public void destroyItem(ViewGroup collection, int position, Object view) {
+        collection.removeView((View) view);
+    }
+
+    public void setListener(View.OnClickListener mListener) {
+        this.mListener = mListener;
+    }
+
+    @Override
+    public int getCount() {
+        return videoDetails.size();
+    }
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        View v = mInflater.inflate(R.layout.trailer_item, container, false);
+        final View playButton = v.findViewById(R.id.trailer_icon);
+        playButton.setTag(videoDetails.get(position));
+        playButton.setOnClickListener(mListener);
+        final View progressBar = v.findViewById(R.id.progressBar);
+        TextView title = (TextView) v.findViewById(R.id.title);
+        title.setText(videoDetails.get(position).getName());
+        Glide
+                .with(mCtx)
+                .load(NetworkUtil.buildYoutubeVideoThumbnailURL(videoDetails.get(position).getVideoID()))
+                .fitCenter()
+                .placeholder(R.drawable.post_background)
+                .crossFade().listener(new RequestListener<String, GlideDrawable>() {
+            @Override
+            public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                return false;
+            }
+
+            @Override
+            public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                progressBar.setVisibility(View.GONE);
+                return false;
+            }
+        })
+                .into((ImageView) v.findViewById(R.id.trailer_thumbnail));
+        container.addView(v);
+        return v;
+    }
+
+
+    public void addVideoDetail(List<VideoDetail> details) {
+        this.videoDetails.clear();
+        if (details != null && !details.isEmpty()) {
+            this.videoDetails.addAll(details);
+        }
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public boolean isViewFromObject(View view, Object object) {
+        return view == object;
+    }
+
+
 }

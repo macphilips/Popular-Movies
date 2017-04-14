@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -69,14 +68,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 }
 
             }
-            if (preference instanceof CheckBoxPreference) {
-                CheckBoxPreference checkBoxPreference = (CheckBoxPreference) preference;
-                if (checkBoxPreference.isChecked()) {
-                    preference.setSummary("Enable");
-                } else {
-                    preference.setSummary("Enable");
-                }
-            }
+
             return true;
         }
     };
@@ -203,8 +195,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             setHasOptionsMenu(true);
             mState = State.REGISTER;
             bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.sort_key)));
-            bindPreferenceSummaryToValue(findPreference(getResources().getString(R.string.loader_key)));
-
         }
 
         @Override

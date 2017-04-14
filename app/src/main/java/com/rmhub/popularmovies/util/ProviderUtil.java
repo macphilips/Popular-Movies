@@ -1,4 +1,4 @@
-package com.rmhub.popularmovies.utils;
+package com.rmhub.popularmovies.util;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,8 +7,8 @@ import android.net.Uri;
 import android.support.v4.content.ContentResolverCompat;
 import android.util.Log;
 
-import com.rmhub.popularmovies.helper.MovieDetails;
-import com.rmhub.popularmovies.helper.ReviewDetails;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.model.ReviewDetails;
 import com.rmhub.popularmovies.provider.Contract;
 
 import java.util.ArrayList;
@@ -24,11 +24,10 @@ import java.util.List;
 public class ProviderUtil {
     // TODO: 4/6/2017 Check for null variables
 
-    public static List<MovieDetails> insertMovies(Context context, List<MovieDetails> details) {
+    public static List<MovieDetail> insertMovies(Context context, List<MovieDetail> details) {
         if (details == null) return new ArrayList<>();
         List<ContentValues> movieCVs = new ArrayList<>();
-
-        for (MovieDetails movieDetails : details) {
+        for (MovieDetail movieDetails : details) {
             ContentValues movieCV = new ContentValues();
             movieCV.put(Contract.Movies.COLUMN_AVERAGE_VOTE, movieDetails.getVote_average());
             movieCV.put(Contract.Movies.COLUMN_BACKDROP_URL, movieDetails.getBackdrop_path());
@@ -51,28 +50,15 @@ public class ProviderUtil {
         return new ArrayList<>();
     }
 
-    public static List<MovieDetails> insertRecommendation(Context context, MovieDetails detail, List<MovieDetails> details) {
+    public static List<MovieDetail> insertRecommendation(Context context, MovieDetail detail, List<MovieDetail> details) {
 
-        List<ContentValues> movieCVs = new ArrayList<>();
         List<ContentValues> recommendationCVs = new ArrayList<>();
-        for (MovieDetails recommended : details) {
+        for (MovieDetail recommended : details) {
 
             ContentValues recommendationCV = new ContentValues();
             recommendationCV.put(Contract.Recommendation.COLUMN_MOVIE_ID, detail.getMovieID());
             recommendationCV.put(Contract.Recommendation.COLUMN_RECOMMENDED_ID, recommended.getMovieID());
             recommendationCVs.add(recommendationCV);
-
-            ContentValues movieCV = new ContentValues();
-            movieCV.put(Contract.Movies.COLUMN_AVERAGE_VOTE, recommended.getVote_average());
-            movieCV.put(Contract.Movies.COLUMN_BACKDROP_URL, recommended.getBackdrop_path());
-            movieCV.put(Contract.Movies.COLUMN_MOVIE_ID, recommended.getMovieID());
-            movieCV.put(Contract.Movies.COLUMN_MOVIE_TITLE, recommended.getTitle());
-            movieCV.put(Contract.Movies.FAVORITE, recommended.getFavorite());
-            movieCV.put(Contract.Movies.COLUMN_POSTER_URL, recommended.getPoster_path());
-            movieCV.put(Contract.Movies.COLUMN_PLOT, recommended.getOverview());
-            movieCV.put(Contract.Movies.COLUMN_RELEASE_DATE, recommended.getRelease_date());
-            movieCV.put(Contract.Movies.COLUMN_CATEGORY, recommended.getCategory());
-            movieCVs.add(movieCV);
 
         }
 
@@ -81,17 +67,13 @@ public class ProviderUtil {
                         Contract.Recommendation.URI,
                         recommendationCVs.toArray(new ContentValues[recommendationCVs.size()]));
 
-        int result1 = context.getContentResolver()
-                .bulkInsert(
-                        Contract.Movies.URI,
-                        movieCVs.toArray(new ContentValues[movieCVs.size()]));
-        if (result > 0 && result1 > 0) {
+        if (result > 0) {
             return details;
         }
         return new ArrayList<>();
     }
 
-    public static List<ReviewDetails> insertReview(Context context, MovieDetails details, List<ReviewDetails> reviewDetails) {
+    public static List<ReviewDetails> insertReview(Context context, MovieDetail details, List<ReviewDetails> reviewDetails) {
         List<ContentValues> reviewsCVs = new ArrayList<>();
 
         for (ReviewDetails movieDetails : reviewDetails) {
@@ -106,7 +88,7 @@ public class ProviderUtil {
 
         int result = context.getContentResolver()
                 .bulkInsert(
-                        Contract.Reviews.makeUriWithID(details.getMovieID()),
+                        Contract.Reviews.URI,
                         reviewsCVs.toArray(new ContentValues[reviewsCVs.size()]));
         if (result > 0) {
             return reviewDetails;
@@ -114,17 +96,17 @@ public class ProviderUtil {
         return new ArrayList<>();
     }
 
-    public static int updateFavorite(Context context, String movieID, boolean value) {
-        Uri uri = Contract.Movies.URI.buildUpon().appendPath(movieID).build();
+    public static int updateFavorite(Context context, int movieID, boolean value) {
+        Uri uri = Contract.Movies.URI.buildUpon().appendPath(String.valueOf(movieID)).build();
         ContentValues contentValues = new ContentValues();
         contentValues.put(Contract.Movies.FAVORITE, value);
         String selection = Contract.Movies.COLUMN_MOVIE_ID + " = ?";
-        String selectionArgs[] = {movieID};
+        String selectionArgs[] = {String.valueOf(movieID)};
         return context.getContentResolver().update(uri, contentValues, selection, selectionArgs);
 
     }
 
-    public static List<MovieDetails> getMovies(Context context) {
+    public static List<MovieDetail> getMovies(Context context) {
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(),
                 Contract.Movies.URI,
                 null,
@@ -138,9 +120,9 @@ public class ProviderUtil {
             return new ArrayList<>();
         }
         cursor.moveToFirst();
-        List<MovieDetails> arrayList = new ArrayList<>();
+        List<MovieDetail> arrayList = new ArrayList<>();
         while (true) {
-            MovieDetails emp = MovieDetails.buildFrom(cursor);
+            MovieDetail emp = MovieDetail.buildFrom(cursor);
             arrayList.add(emp);
             if (!cursor.moveToNext())
                 break;
@@ -149,7 +131,21 @@ public class ProviderUtil {
         return arrayList;
     }
 
-    public static List<MovieDetails> getRecommendation(Context context, MovieDetails details) {
+    public static int getCategory(Context context, int movieID) {
+        Cursor cursor = ContentResolverCompat.query(context.getContentResolver(),
+                Contract.Movies.URI,
+                new String[]{Contract.Movies.COLUMN_CATEGORY},
+                Contract.Movies.COLUMN_MOVIE_ID + " =?",
+                new String[]{String.valueOf(movieID)},
+                null,
+                null);
+        if (cursor.moveToFirst()) {
+            return cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_CATEGORY));
+        }
+        return -1;
+    }
+
+    public static List<MovieDetail> getRecommendation(Context context, MovieDetail details) {
 
         Cursor recommendationCursor = ContentResolverCompat.query(context.getContentResolver(),
                 Contract.Recommendation.makeWithID(details.getMovieID()),
@@ -158,7 +154,7 @@ public class ProviderUtil {
             return new ArrayList<>();
         }
         recommendationCursor.moveToFirst();
-        List<MovieDetails> arrayList = new ArrayList<>();
+        List<MovieDetail> arrayList = new ArrayList<>();
         while (true) {
             int recommendationID = recommendationCursor.getInt(
                     recommendationCursor.getColumnIndexOrThrow(Contract.Recommendation.COLUMN_RECOMMENDED_ID));
@@ -167,7 +163,7 @@ public class ProviderUtil {
                     null, null, null, null, null);
             if (movieCursor == null) continue;
             movieCursor.moveToFirst();
-            arrayList.add(MovieDetails.buildFrom(movieCursor));
+            arrayList.add(MovieDetail.buildFrom(movieCursor));
             movieCursor.close();
             if (!recommendationCursor.moveToNext())
                 break;
@@ -176,7 +172,7 @@ public class ProviderUtil {
         return arrayList;
     }
 
-    public static List<ReviewDetails> getReviews(Context context, MovieDetails details) {
+    public static List<ReviewDetails> getReviews(Context context, MovieDetail details) {
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Reviews.makeUriWithID(details.getMovieID()),
                 null, null, null, null, null);
         if (cursor == null) {
@@ -191,7 +187,6 @@ public class ProviderUtil {
             if (!cursor.moveToNext())
                 break;
         }
-        details.setReviewDetails(arrayList);
         cursor.close();
         return arrayList;
     }

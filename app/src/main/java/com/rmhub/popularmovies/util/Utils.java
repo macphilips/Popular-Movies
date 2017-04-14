@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.rmhub.popularmovies.utils;
+package com.rmhub.popularmovies.util;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -37,6 +37,7 @@ public class Utils {
     }
 
     public static void checkConnection(Context context) {
+
         final ConnectivityManager cm =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         final NetworkInfo networkInfo = cm.getActiveNetworkInfo();

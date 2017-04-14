@@ -7,14 +7,14 @@
     <string-array name="pref_sort_list_titles">
         <item>Popular Movies</item>
         <item>Top Rated Movies</item>
+        <item>Favorite</item>
     </string-array>
     <string-array name="pref_sort_list_values">
         <item>popular</item>
         <item>top_rated</item>
+        <item>favorite</item>
     </string-array>
     <string name="sort_key">sort_list</string>
-
-
     <string name="loader_by_title">Imager Loader</string>
     <string-array name="pref_loader_list_titles">
         <item>Simple Image Fetcher</item>
@@ -32,7 +32,7 @@
     <string name="permission_request">Require Permission to use this feature</string>
     <string name="title_activity_movie_details">MovieDetailsActivity</string>
     <string name="image_desc">Image Description</string>
-    <string name="movie_plot">A live-action adaptation of Disney\'s version of the classic \'Beauty and the Beast\' tale of a cursed prince and a beautiful young woman who helps him break the spell.</string>
+    <string name="movie_plot">A live-action adaptation of Disney\'s version of the classic \'Beauty and the Beast\' tale of a cursed prince and a beautiful young woman who helps him break the spell. </string>
     <string name="movie_title">Beauty and the Beast</string>
     <string name="release_date">2014</string>
     <string name="title_activity_main2">Main2Activity</string>
@@ -66,4 +66,6 @@
     <string name="recommendation">Recommendations</string>
     <string name="no_network_connection_toast">No Network Connection</string>
     <string name="loader_default_value">0</string>
+    <string name="review_sample">Spoilers \n\nThe live action remake of \"Beauty and the Beast\" was good, but it failed to capture the magic of the cartoon version. There were somethings that they got right, and others that dragged on.\n\nI thought \"Be Our Guest\" was done beautifully. The 3d made it even more enchanting. The main characters\' backstories also added some depth to them. However, there were some scenes that I felt added nothing to the story. Such as the search for Belle by Gaston and her father. The \"No one is like Gaston\" scene didn\'t have the bravado or arrogance of the original.\n\nI also felt that Luke Evans was miscast. He wasn\'t the handsomest guy in town, nor was he the strongest. Which is why it was hard for me to accept him as the character. Emma Watson was serviceable. Her voice was fine, but it wasn\'t strong enough to carry Belle\'s songs. Dan Stevens was the best part of the film. I felt that he should have had more songs, because he has a beautiful baritone. Although his beast costume should have been more frightening. \n\nOverall, it\'s a fun film to watch. Though, I wouldn\'t call it a classic.</string>
+    <string name="review_sample_short">Spoilers \n\nThe live action remake of \"Beauty and the Beast\" was good, but it failed to capture the magic of the cartoon version.</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.rmhub.popularmovies.helper;
 
-import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -10,17 +9,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 
+import com.android.volley.VolleyError;
 import com.bumptech.glide.Glide;
-import com.rmhub.popularmovies.PopularMovieApplication;
+import com.rmhub.popularmovies.CustomImageView;
 import com.rmhub.popularmovies.R;
-import com.rmhub.popularmovies.utils.NetworkUtil;
-import com.rmhub.popularmovies.utils.Utils;
-import com.rmhub.simpleimagefetcher.ImageCache;
-import com.rmhub.simpleimagefetcher.ImageFetcher;
-import com.squareup.picasso.Picasso;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.model.Movies;
+import com.rmhub.popularmovies.util.MovieRequest;
+import com.rmhub.popularmovies.util.NetworkUtil;
+import com.rmhub.popularmovies.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,16 +35,16 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     private static final String IMAGE_CACHE_DIR = "thumbnails";
     private final AppCompatActivity mContext;
     private final RecyclerView mRecyclerView;
-    private final ImageFetcher mImageFetcher;
-    private final List<MovieDetails> movieList = new ArrayList<>();
+
+    private final List<MovieDetail> movieList = new ArrayList<>();
     private RecyclerView.LayoutManager mLayoutManager;
     private Options options;
     private View.OnClickListener listener;
-    private FrameLayout.LayoutParams mImageViewLayoutParams;
-    private Loader mLoader;
+    private LinearLayout.LayoutParams mImageViewLayoutParams;
     private ScrollChange mScrollChange;
     private int nextPage = 0, currentCount, totalCount, totalPages,
             numColumns, itemWidth, itemHeight;
+    private OnLoadAdapter onLoadAdapter;
 
     public MoviesAdapter(AppCompatActivity mContext, RecyclerView recyclerView, Options options) {
         setImageLayoutSize(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -54,12 +53,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         this.options = options;
         this.mRecyclerView = recyclerView;
         mLayoutManager = recyclerView.getLayoutManager();
-        mLoader = new Loader(mContext, options.loader_id);
-        ImageCache.ImageCacheParams cacheParams = new ImageCache.ImageCacheParams(mContext, IMAGE_CACHE_DIR);
-        cacheParams.setMemCacheSizePercent(0.25f);
-        mImageFetcher = new ImageFetcher(mContext, mContext.getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
-        mImageFetcher.setLoadingImage(R.drawable.post_background);
-        mImageFetcher.addImageCache(mContext.getSupportFragmentManager(), cacheParams);
 
         setUpRecyclerView();
     }
@@ -69,35 +62,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     }
 
     private void setImageLayoutSize(int width, int height) {
-        mImageViewLayoutParams = new FrameLayout.LayoutParams(width, height);
-    }
-
-    private void selectLoader(MovieDetails details, ImageView moviePoster) {
-        Application app = mContext.getApplication();
-        if (app instanceof PopularMovieApplication) {
-            PopularMovieApplication popApp = (PopularMovieApplication) app;
-            if (popApp.loader == 0) {
-                mImageFetcher.loadImage(details.getPoster_path(), moviePoster);
-            } else if (popApp.loader == 1) {
-                Glide
-                        .with(mContext)
-                        .load(details.getPoster_path())
-                        .centerCrop()
-                        .placeholder(R.drawable.post_background)
-                        .crossFade()
-                        .into(moviePoster);
-            } else if (popApp.loader == 2) {
-                Picasso
-                        .with(mContext)
-                        .load(details.getPoster_path())
-                        .centerCrop()
-                        .placeholder(R.drawable.post_background)
-                        .into(moviePoster);
-            }
-
-        } else {
-            mImageFetcher.loadImage(details.getPoster_path(), moviePoster);
-        }
+        mImageViewLayoutParams = new LinearLayout.LayoutParams(width, height);
     }
 
     private void setUpRecyclerView() {
@@ -107,11 +72,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
             mImageWidthSize = options.roughItemWidthSize;
         } else {
             mImageWidthSize = mContext.getResources().getDimensionPixelSize(R.dimen.poster_column_size);
-        }
-        if (options.imagePadding > 0) {
-            mImageThumbSpacing = options.imagePadding;
-        } else {
-            mImageThumbSpacing = 0;
         }
 
         mRecyclerView.setLayoutManager(mLayoutManager);
@@ -124,16 +84,15 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                     public void onGlobalLayout() {
                         if (getNumColumns() == 0) {
                             final int numColumns = (int) Math.floor(
-                                    mLayoutManager.getWidth() / (mImageWidthSize + (mImageThumbSpacing * 2)));
+                                    mLayoutManager.getWidth() / (mImageWidthSize + (options.padding * 2)));
                             if (numColumns > 0) {
                                 final int columnWidth =
-                                        (mLayoutManager.getWidth() / numColumns) - mImageThumbSpacing;
+                                        (mLayoutManager.getWidth() / numColumns) - options.padding;
                                 setNumColumns(numColumns);
 
                                 if (mLayoutManager instanceof GridLayoutManager) {
                                     ((GridLayoutManager) mLayoutManager).setSpanCount(numColumns);
                                 }
-                                mImageFetcher.setImageWidth(columnWidth);
                                 setItemWidth(columnWidth);
                                 if (Utils.hasJellyBean()) {
                                     mRecyclerView.getViewTreeObserver()
@@ -155,10 +114,10 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         currentCount = 0;
         //    numColumns = 0;
         notifyDataSetChanged();
-        refresh();
+        loadMovie();
     }
 
-    private void addMovieList(List<MovieDetails> movieList) {
+    private void addMovieList(List<MovieDetail> movieList) {
         if (movieList == null) {
             return;
         }
@@ -176,7 +135,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
 
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
-        MovieDetails tag = movieList.get(position);
+        MovieDetail tag = movieList.get(position);
         holder.container.setTag(tag);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -185,8 +144,17 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
 
         holder.container.setOnClickListener(listener);
         holder.moviePoster.setLayoutParams(mImageViewLayoutParams);
-        holder.moviePoster.setPadding(options.imagePadding, options.imagePadding, options.imagePadding, options.imagePadding);
-        selectLoader(tag, holder.moviePoster);
+        holder.moviePoster.setRadius(options.radius);
+        mImageViewLayoutParams.setMargins(options.marginLeft, options.marginTop, options.marginRight, options.marginBottom);
+        //holder.container.setPadding(options.marginLeft, options.marginTop, options.marginRight, options.marginBottom);
+        Glide
+                .with(mContext)
+                .load(tag.getPoster_path())
+                .override(itemWidth, itemHeight)
+                .fitCenter()
+                .placeholder(R.drawable.post_background)
+                .crossFade()
+                .into(holder.moviePoster);
     }
 
     @Override
@@ -215,42 +183,12 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
             return;
         }
         this.itemWidth = itemWidth;
-        this.itemHeight = (int) ((274 / 185f) * itemWidth);
+        this.itemHeight = (int) (1.5 * itemWidth);
         ;
         setImageLayoutSize(itemWidth, itemHeight);
         notifyDataSetChanged();
     }
 
-    @Override
-    public void loadMore() {
-        if (hasMoreItemToLoad())
-            loadMovie(nextPage);
-    }
-
-    private void loadMovie(int page_num) {
-        Movies.Query query = new Movies.Query(NetworkUtil.buildMoviesURL(page_num));
-        ddddd(query);
-    }
-
-    private void ddddd(Movies.Query query) {
-
-        mLoader.addOnLoadCallBack(new Loader.MovieLoaderCallBack() {
-
-            @Override
-            public void onLoadComplete(ResultCallback callback) {
-                if (callback instanceof Movies.Result) {
-                    Movies.Result result = (Movies.Result) callback;
-
-                    totalCount = result.getTotalCounts();
-                    totalPages = result.getTotalPages();
-                    nextPage = result.getNextPage();
-                    addMovieList(result.getMovieList());
-                    mScrollChange.setLoading();
-                }
-            }
-        });
-        mLoader.load(query);
-    }
 
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(CURRENT_PAGE_NUMBER, nextPage);
@@ -261,23 +199,76 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         // mRecyclerView.scrollToPosition(scrollTo);
     }
 
-    public Loader getMovieLoader() {
-        return mLoader;
-    }
-
-    public void refresh() {
+    public void loadMovie() {
         loadMovie(1);
     }
 
-    public void refresh(Movies.Query query) {
-        ddddd(query);
+    @Override
+    public void loadMore() {
+        if (hasMoreItemToLoad())
+            loadMovie(nextPage);
+    }
+
+    private void loadMovie(int page_num) {
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMoviesURL(page_num));
+        Movies.Query query = new Movies.Query(bundle);
+        loadMovie(query);
+    }
+
+    public void loadMovie(Movies.Query query) {
+        NetworkUtil.getInstance(mContext).fetchResult(query, Movies.Result.class, new MovieRequest.MovieRequestListener<Movies.Result>() {
+            @Override
+            public void onResponse(Movies.Result result) {
+                super.onResponse(result);
+                if (onLoadAdapter != null) {
+                    onLoadAdapter.success();
+                }
+                totalCount = result.getTotalCounts();
+                totalPages = result.getTotalPages();
+                nextPage = result.getCurrentPage() + 1;
+                addMovieList(result.getMovieList());
+                mScrollChange.setLoading();
+            }
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                super.onErrorResponse(error);
+                if (onLoadAdapter != null) {
+                    onLoadAdapter.failed(error.getMessage());
+                }
+            }
+
+            @Override
+            public void onNetworkError() {
+                super.onNetworkError();
+                if (onLoadAdapter != null) {
+                    onLoadAdapter.failed("No Internet Connection");
+                }
+            }
+        });
+    }
+
+    public void setLoadAdapter(OnLoadAdapter listener) {
+        this.onLoadAdapter = listener;
+    }
+
+    public interface OnLoadAdapter {
+        void success();
+
+        void failed(String message);
+
     }
 
     public static class Options {
         public int roughItemWidthSize = -1;
-        public int imagePadding = -1;
-        public int loader_id = 101;
+        public int marginLeft = 0;
+        public int marginRight = 0;
+        public int marginTop = 0;
+        public int radius = 0;
+        public int marginBottom = 0;
 
+        public int padding = 0;
     }
 
     static class MyViewHolder extends RecyclerView.ViewHolder {
@@ -286,7 +277,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         View container;
 
         @BindView(R.id.movie_poster)
-        ImageView moviePoster;
+        CustomImageView moviePoster;
 
         MyViewHolder(View itemView) {
             super(itemView);

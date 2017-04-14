@@ -1,5 +1,7 @@
 package com.rmhub.popularmovies.helper;
 
+import android.os.Bundle;
+
 /**
  * Created by MOROLANI on 4/7/2017
  * <p>
@@ -7,7 +9,6 @@ package com.rmhub.popularmovies.helper;
  * .
  */
 
-public interface Query {
-    String query();
-    String resultCallBackName();
+public interface MovieQuery {
+    Bundle queryBundle();
 }

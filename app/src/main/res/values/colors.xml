@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="colorAccent">#f79f08</color>
     <color name="grey">#707b7777</color>
+    <!--
+    <color name="colorPrimary">#607D8B</color>
+    <color name="colorPrimaryDark">#455A64</color>
+    <color name="colorPrimaryLight">#CFD8DC</color>
+    <color name="colorAccent">#FFC107</color>
 
-
-    <color name="colorPrimary">#3f3f3f</color>
-    <color name="colorPrimaryDark">#1d1d1d</color>
+-->
+    <color name="colorAccent">#ffa000</color>
+    <color name="colorPrimary">#424242</color>
+    <color name="colorPrimaryDark">#212121</color>
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#FFFFFF</color>
+    <color name="divider">#BDBDBD</color>
 
 
     <color name="blue">#01152a</color>
     <color name="black">#000000</color>
-    <color name="orange">#FA0</color>
+    <color name="orange">#ffb300</color>
     <color name="white">#FFFFFF</color>
     <color name="app_white_smoke">#F5F5F5</color>
 
@@ -21,6 +30,14 @@
     <color name="dark_grey">#424242</color>
     <color name="app_grey">#424242</color>
     <color name="bg_grey">#fb2a2922</color>
-    <color name="overlay_start">#661d2020</color>
-    <color name="overlay_end">#661c262f</color>
+    <color name="overlay_start">#902b2e2e</color>
+    <color name="overlay_end">#881c262f</color>
+    <color name="load_button_start">#f4f4f4</color>
+    <color name="load_button_end">#fdfdfd</color>
+    <color name="load_button_stroke">#d2d3d4</color>
+    <color name="overlay_stroke">#b4b5b6</color>
+
+    <color name="test">#ff082838</color>
+    <color name="test1">#ff3a5a6a</color>
+    <color name="test2">#ff2a0a06</color>
 </resources>

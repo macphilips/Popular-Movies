@@ -1,6 +1,12 @@
 package com.rmhub.popularmovies.helper;
 
-import com.rmhub.popularmovies.utils.NetworkUtil;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.model.Movies;
+import com.rmhub.popularmovies.model.Review;
+import com.rmhub.popularmovies.model.ReviewDetails;
+import com.rmhub.popularmovies.model.Video;
+import com.rmhub.popularmovies.model.VideoDetail;
+import com.rmhub.popularmovies.util.NetworkUtil;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,11 +23,11 @@ import java.util.List;
  */
 
 public class ParseResult {
-    public static List<MovieDetails> parseMovieList(String result) {
+    public static List<MovieDetail> parseMovieList(String result) {
         try {
             JSONObject obj = new JSONObject(result);
             if (obj.has("results")) {
-                List<MovieDetails> movieList = new ArrayList<>();
+                List<MovieDetail> movieList = new ArrayList<>();
                 JSONArray jsMovieList = obj.getJSONArray("results");
                 for (int i = 0, n = jsMovieList.length(); i < n; i++) {
                     movieList.add(parseMovie(jsMovieList.getJSONObject(i)));
@@ -42,9 +48,9 @@ public class ParseResult {
         }
     }
 
-    private static MovieDetails parseMovie(JSONObject obj)
+    private static MovieDetail parseMovie(JSONObject obj)
             throws JSONException {
-        MovieDetails movieDetails = new MovieDetails();
+        MovieDetail movieDetails = new MovieDetail();
         movieDetails.setCategory(NetworkUtil.movie_category);
         if (obj.has("adult")) {
             movieDetails.setAdult(obj.getBoolean("adult"));
@@ -57,9 +63,6 @@ public class ParseResult {
         }
         if (obj.has("budget")) {
             movieDetails.setBudget(obj.getLong("poster_path"));
-        }
-        if (obj.has("genres")) {
-            movieDetails.setReviewDetails(parseReview(obj.getJSONArray("genres")));
         }
         if (obj.has("homepage")) {
             movieDetails.setHomepage(obj.getString("homepage"));
@@ -136,7 +139,7 @@ public class ParseResult {
             reviewDetail.setId(genres.getString("id"));
         }
         if (genres.has("author")) {
-            reviewDetail.setAuthor(genres.getString("name"));
+            reviewDetail.setAuthor(genres.getString("author"));
         }
         if (genres.has("content")) {
             reviewDetail.setContent(genres.getString("content"));
@@ -144,9 +147,73 @@ public class ParseResult {
         return reviewDetail;
     }
 
-    public static List<ReviewDetails> parseReview(String result) {
+    public static List<ReviewDetails> parseReview(String result, Review.Result resultCallBack) {
         try {
-            return parseReview(new JSONObject(result).getJSONArray("genres"));
+            JSONObject obj = new JSONObject(result);
+            if (obj.has("total_results")) {
+                resultCallBack.setTotalResult(obj.getInt("total_results"));
+            }
+            if (obj.has("total_pages")) {
+                resultCallBack.setTotalPages(obj.getInt("total_pages"));
+            }
+            if (obj.has("page")) {
+                resultCallBack.setPage(obj.getInt("page"));
+            }
+            return parseReview(new JSONObject(result).getJSONArray("results"));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    private static VideoDetail parseVideo(JSONObject genres)
+            throws JSONException {
+        VideoDetail reviewDetail = new VideoDetail();
+        if (genres.has("id")) {
+            reviewDetail.setId(genres.getString("id"));
+        }
+        if (genres.has("name")) {
+            reviewDetail.setName(genres.getString("name"));
+        }
+        if (genres.has("key")) {
+            reviewDetail.setVideoID(genres.getString("key"));
+        }
+        if (genres.has("site")) {
+            reviewDetail.setSite(genres.getString("site"));
+        }
+        if (genres.has("type")) {
+            reviewDetail.setType(genres.getString("type"));
+        }
+        if (genres.has("size")) {
+            reviewDetail.setSize(genres.getInt("size"));
+        }
+        return reviewDetail;
+    }
+
+    private static List<VideoDetail> parseVideo(JSONArray genres)
+            throws JSONException {
+        List<VideoDetail> reviewDetailsList = new ArrayList<>();
+        for (int i = 0, n = genres.length(); i < n; i++) {
+            reviewDetailsList.add(parseVideo(genres.getJSONObject(i)));
+        }
+
+        return reviewDetailsList;
+    }
+
+    public static List<VideoDetail> parseVideo(String result, Video.Result resultCallBack) {
+        try {
+            JSONObject obj = new JSONObject(result);
+            if (obj.has("total_results")) {
+                resultCallBack.setTotalResult(obj.getInt("total_results"));
+            }
+            if (obj.has("total_pages")) {
+                resultCallBack.setTotalPages(obj.getInt("total_pages"));
+            }
+            if (obj.has("page")) {
+                resultCallBack.setPage(obj.getInt("page"));
+            }
+            return parseVideo(new JSONObject(result).getJSONArray("results"));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -164,7 +231,7 @@ public class ParseResult {
                 resultCallBack.setTotalPages(obj.getInt("total_pages"));
             }
             if (obj.has("page")) {
-                resultCallBack.setNextPage(obj.getInt("page"));
+                resultCallBack.setCurrentPage(obj.getInt("page"));
             }
 
             resultCallBack.setMovieList(ParseResult.parseMovieList(result));

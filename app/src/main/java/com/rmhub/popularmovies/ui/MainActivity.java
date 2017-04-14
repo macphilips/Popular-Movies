@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,11 +16,9 @@ import android.view.Window;
 import android.widget.ProgressBar;
 
 import com.rmhub.popularmovies.R;
-import com.rmhub.popularmovies.helper.MovieDetails;
-import com.rmhub.popularmovies.helper.Loader;
 import com.rmhub.popularmovies.helper.MoviesAdapter;
-import com.rmhub.popularmovies.helper.ResultCallback;
-import com.rmhub.popularmovies.utils.Utils;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.util.Utils;
 
 import java.util.Locale;
 
@@ -30,6 +29,7 @@ import butterknife.OnClick;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int SETTINGS = 2;
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     @BindView(R.id.toolbar)
     Toolbar mToolbar;
@@ -47,13 +47,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @OnClick(R.id.refresh_button)
     void refresh() {
         hideReloadButton();
-        mAdapter.refresh();
+        mAdapter.loadMovie();
 
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Log.v(TAG, "onCreate");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
         }
@@ -65,21 +67,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         mAdapter = new MoviesAdapter(this, mRecyclerView, opt);
         mAdapter.setOnItemClickCallBack(this);
-        showIndicator();
-        mAdapter.getMovieLoader().addOnLoadCallBack(new Loader.MovieLoaderCallBack() {
+        mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
             @Override
-            public void onLoadComplete(ResultCallback result) {
+            public void success() {
                 hideIndicator();
             }
 
             @Override
-            public void onLoadError(ResultCallback  result) {
+            public void failed(String message) {
                 hideIndicator();
-                //ErrorDialog.show(result.getStatusDesc(), getSupportFragmentManager());
-                showReloadButton();
+                ErrorDialog.show(message, getSupportFragmentManager());
+            //    showReloadButton();
             }
         });
-        mAdapter.refresh();
+        showIndicator();
+        mAdapter.loadMovie();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Log.v(TAG, "onResume Called");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.v(TAG, "onPause");
     }
 
     private void showIndicator() {
@@ -142,13 +157,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         Object tag = v.getTag();
-        if (tag != null && tag instanceof MovieDetails) {
+        if (tag != null && tag instanceof MovieDetail) {
             Intent i = new Intent(this, MovieDetailsActivity.class);
-            i.putExtra(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetails) tag);
+            i.putExtra(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetail) tag);
             if (Utils.hasJellyBean()) {
                 ActivityOptionsCompat options = ActivityOptionsCompat.
                         makeSceneTransitionAnimation(this, v,
-                                String.format(Locale.US, "poster_%d", ((MovieDetails) tag).getMovieID()));
+                                String.format(Locale.US, "poster_%d", ((MovieDetail) tag).getMovieID()));
                 startActivity(i, options.toBundle());
             } else {
                 startActivity(i);

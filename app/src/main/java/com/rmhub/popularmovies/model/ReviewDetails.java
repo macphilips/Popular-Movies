@@ -1,9 +1,11 @@
-package com.rmhub.popularmovies.helper;
+package com.rmhub.popularmovies.model;
 
 import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.provider.Contract;
 
 /**
@@ -26,9 +28,18 @@ public class ReviewDetails implements Parcelable {
             return new ReviewDetails[size];
         }
     };
+
+    @SerializedName("id")
+    @Expose
     private String id;
+    @SerializedName("author")
+    @Expose
     private String author;
+    @SerializedName("content")
+    @Expose
     private String content;
+    @SerializedName("url")
+    @Expose
     private String reviewURL;
 
     protected ReviewDetails(Parcel in) {
@@ -38,7 +49,7 @@ public class ReviewDetails implements Parcelable {
         reviewURL = in.readString();
     }
 
-    protected ReviewDetails() {
+    public ReviewDetails() {
 
     }
 

@@ -1,40 +1,52 @@
 package com.rmhub.popularmovies.ui;
 
-import android.app.Application;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.widget.ImageView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.amulyakhare.textdrawable.TextDrawable;
+import com.amulyakhare.textdrawable.util.ColorGenerator;
+import com.android.volley.VolleyError;
 import com.bumptech.glide.Glide;
-import com.rmhub.popularmovies.PopularMovieApplication;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.rd.Orientation;
+import com.rd.PageIndicatorView;
+import com.rmhub.popularmovies.CustomImageView;
 import com.rmhub.popularmovies.R;
-import com.rmhub.popularmovies.helper.Loader;
-import com.rmhub.popularmovies.helper.MovieDetails;
-import com.rmhub.popularmovies.helper.Movies;
 import com.rmhub.popularmovies.helper.MoviesAdapter;
-import com.rmhub.popularmovies.helper.Review;
-import com.rmhub.popularmovies.helper.Video;
-import com.rmhub.popularmovies.utils.NetworkUtil;
-import com.rmhub.simpleimagefetcher.ImageCache;
-import com.rmhub.simpleimagefetcher.ImageFetcher;
-import com.rmhub.simpleimagefetcher.ImageWorker;
-import com.squareup.picasso.Picasso;
+import com.rmhub.popularmovies.helper.ReviewAdapter;
+import com.rmhub.popularmovies.helper.TrailerVideoAdapter;
+import com.rmhub.popularmovies.model.MovieDetail;
+import com.rmhub.popularmovies.model.Movies;
+import com.rmhub.popularmovies.model.Review;
+import com.rmhub.popularmovies.model.ReviewDetails;
+import com.rmhub.popularmovies.model.VideoDetail;
+import com.rmhub.popularmovies.util.MovieRequest;
+import com.rmhub.popularmovies.util.NetworkUtil;
+import com.rmhub.popularmovies.util.ProviderUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,11 +56,13 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
-public class MovieDetailsActivity extends AppCompatActivity implements ImageWorker.OnImageLoadedListener {
+public class MovieDetailsActivity extends AppCompatActivity {
 
     public static final String MOVIES_DETAILS = "details";
     private static final String IMAGE_CACHE_DIR = "thumbnails";
+    private static final String TAG = MovieDetailsActivity.class.getSimpleName();
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -60,88 +74,204 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
     TextView movieTitle;
     @BindView(R.id.movie_rating)
     TextView movieRating;
-    @BindView(R.id.backdrop_photo)
-    ImageView backdropPhoto;
+
     @BindView(R.id.movie_poster)
-    ImageView moviePoster;
+    CustomImageView moviePoster;
+
     @BindView(R.id.overview_bg)
     View overviewBg;
     @BindView(R.id.rv_recommendation)
     RecyclerView mRvRecommendation;
     @BindView(R.id.rv_review)
-    RecyclerView mRvReview;
+    LinearLayout mRvReview;
+
+    @BindView(R.id.review_title)
+    View mReview;
+    @BindView(R.id.viewPager)
+    ViewPager mPager;
+    @BindView((R.id.pageindicatorview))
+    PageIndicatorView indicatorView;
+    @BindView(R.id.mark_as_favorite)
+    Button markAsFavButton;
+    private boolean markedAsFav;
+    private Button readMoreButton;
 
     private GradientDrawable grad;
     private ShapeDrawable shapeDrawable;
-    private ImageFetcher mImageFetcher;
-    private PopularMovieApplication popApp;
-    private MoviesAdapter mAdapter;
     private View.OnClickListener mItemClickCallback = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
 
         }
     };
-
-    public Palette.Swatch getDominantColor(Palette bitmap) {
-        List<Palette.Swatch> swatchesTemp = (bitmap).getSwatches();
-        List<Palette.Swatch> swatches = new ArrayList<Palette.Swatch>(swatchesTemp);
-        Collections.sort(swatches, new Comparator<Palette.Swatch>() {
-            @Override
-            public int compare(Palette.Swatch swatch1, Palette.Swatch swatch2) {
-                return swatch2.getPopulation() - swatch1.getPopulation();
-            }
-        });
-        return swatches.size() > 0 ? swatches.get(0) : null;
-    }
+    private MovieDetail details;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
-        }
-        if (getApplication() instanceof PopularMovieApplication) {
-            popApp = (PopularMovieApplication) getApplication();
-        }
         setContentView(R.layout.activity_movie_details);
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        MovieDetails details = getIntent().getParcelableExtra(MOVIES_DETAILS);
-        Movies.Query recommendationQuery = new Movies.Query(NetworkUtil.buildMovieRecommendation(details, 1));
-        Video.Query videoQuery = new Video.Query(NetworkUtil.buildMovieVideos(details, 1));
-        Review.Query reviewQuery = new Review.Query(NetworkUtil.buildMovieReviewURL(details, 1));
+        readMoreButton = new Button(this);
 
-        Loader videoLoader = new Loader(this,300);
-        videoLoader.addOnLoadCallBack(null);
-        videoLoader.load(videoQuery);
+        details = getIntent().getParcelableExtra(MOVIES_DETAILS);
+        markedAsFav = details.getFavorite();
+        setupView(details);
+        setupShapeDrawable();
+        int posterWidth = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
+        Glide
+                .with(this)
+                .load(details.getPoster_path())
+                .asBitmap()
+                //  .override(posterWidth, (int) (( 1.5) * posterWidth))
+                .fitCenter()
+                .placeholder(R.drawable.post_background).listener(new RequestListener<String, Bitmap>() {
+            @Override
+            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                return false;
+            }
 
-        Loader reviewLoader = new Loader(this,300);
-        reviewLoader.addOnLoadCallBack(null);
-        reviewLoader.load(reviewQuery);
+            @Override
+            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target,
+                                           boolean isFromMemoryCache, boolean isFirstResource) {
+                createPaletteAsync(resource, null);
+                return false;
+            }
+        })
+                .into(moviePoster);
 
+        getReviews(details);
+
+
+        setupRecommendationAdapter(details);
+
+
+        setupTrailerVideoAdapter(details);
+    }
+
+    public void setMarkAsFavBackground() {
+        if (markedAsFav) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                markAsFavButton.setBackground(getResources().getDrawable(R.drawable.marked_as_favorite));
+                markAsFavButton.setTextColor(Color.WHITE);
+            } else {
+                markAsFavButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.mark_as_favorite));
+                markAsFavButton.setTextColor(Color.BLACK);
+            }
+        }
+
+    }
+
+    private void getReviews(MovieDetail details) {
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieReviewURL(details, 1));
+        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
+        Review.Query reviewQuery = new Review.Query(bundle);
+        NetworkUtil.getInstance(this).fetchResult(reviewQuery, Review.Result.class, new MovieRequest.MovieRequestListener<Review.Result>() {
+            @Override
+            public void onResponse(Review.Result response) {
+                super.onResponse(response);
+                setupReviewLayout(response.getDetails());
+            }
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                super.onErrorResponse(error);
+            }
+
+            @Override
+            public void onNetworkError() {
+                super.onNetworkError();
+            }
+        });
+    }
+
+    private void setupRecommendationAdapter(MovieDetail details) {
+
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieRecommendation(details, 1));
+        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
+        Movies.Query recommendationQuery = new Movies.Query(bundle);
 
         MoviesAdapter.Options opt = new MoviesAdapter.Options();
         opt.roughItemWidthSize = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
-        opt.imagePadding = 2 * getResources().getDimensionPixelSize(R.dimen.image_thumbnail_space);
-        opt.loader_id = 202;
+        opt.marginLeft = getResources().getDimensionPixelSize(R.dimen.margin);
+        opt.radius = getResources().getDimensionPixelSize(R.dimen.cardview_default_radius);
 
         mRvRecommendation.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
+        MoviesAdapter mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
         mAdapter.setOnItemClickCallBack(mItemClickCallback);
-        mAdapter.refresh(recommendationQuery);
-
-
-        selectImageLoader(details);
-
-        setUpView(details);
-        setUpShapeDrawable();
+        mAdapter.loadMovie(recommendationQuery);
     }
 
-    private void setUpShapeDrawable() {
+    private void setupReviewLayout(List<ReviewDetails> details) {
+        if (details.isEmpty()) {
+            mReview.setVisibility(View.GONE);
+        }
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources().getDimensionPixelSize(R.dimen.divider));
+        int n = Math.min(details.size(), 3);
+        for (int i = 0; i < n; i++) {
+            View v = getLayoutInflater().inflate(R.layout.review_item, null);
+            v.setLayoutParams(params);
+            params.setMargins(30, 10, 30, 10);
+
+
+            ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
+            ((TextView) v.findViewById(R.id.review)).setText(details.get(i).getContent());
+            String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
+
+            TextDrawable drawable1 = TextDrawable.builder()
+                    .beginConfig()
+                    .bold()
+                    .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
+                    .endConfig()
+                    .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                (v.findViewById(R.id.review_avatar)).setBackground(drawable1);
+            } else {
+                (v.findViewById(R.id.review_avatar)).setBackgroundDrawable(drawable1);
+            }
+            mRvReview.addView(v);
+            if (i >= 0 && i < n - 1 && n != 1) {
+                View divider = new View(this);
+                divider.setLayoutParams(dividerParams);
+                dividerParams.setMargins(30, 10, 30, 10);
+                divider.setBackgroundColor(getResources().getColor(R.color.load_button_start));
+                mRvReview.addView(divider);
+            }
+        }
+        if (details.size() > n) {
+            readMoreButton.setLayoutParams(params);
+            params.setMargins(30, 10, 30, 10);
+            mRvReview.addView(readMoreButton);
+            readMoreButton.setText(String.format(Locale.US, "Read All Reviews %d", details.size()));
+            ReviewAdapter.setBackgroundState(this, readMoreButton, 0);
+        } else {
+            readMoreButton = null;
+        }
+    }
+
+    private void setupTrailerVideoAdapter(MovieDetail details) {
+        TrailerVideoAdapter adapter = new TrailerVideoAdapter(details, this);
+        adapter.setListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(NetworkUtil.buildYoutubeVideoURL((VideoDetail) v.getTag()))));
+
+            }
+        });
+        mPager.setAdapter(adapter);
+        indicatorView = (PageIndicatorView) findViewById(R.id.pageindicatorview);
+        indicatorView.setViewPager(mPager);
+        indicatorView.setOrientation(Orientation.HORIZONTAL);
+    }
+
+    private void setupShapeDrawable() {
         int height = overviewBg.getHeight();
         int width = overviewBg.getWidth();
 
@@ -149,7 +279,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         rect.resize(width, height);
 
         shapeDrawable = new ShapeDrawable(rect);
-        // shapeDrawable.getPaint().setColor(details.getRgb());
 
         int[] colors = {getResources().getColor(R.color.overlay_start), getResources().getColor(R.color.overlay_end)};
 
@@ -168,7 +297,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         }
     }
 
-    private void setUpView(MovieDetails details) {
+    private void setupView(MovieDetail details) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             (moviePoster).setTransitionName(String.format(Locale.US, "poster_%d", details.getMovieID()));
         }
@@ -177,12 +306,6 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         (movieTitle).setText(String.valueOf(details.getTitle()));
         (movieRating).setText(String.format(Locale.US, "%.1f/%d", details.getVote_average(), 10));
 
-        ImageCache.ImageCacheParams cacheParams = new ImageCache.ImageCacheParams(this, IMAGE_CACHE_DIR);
-        cacheParams.setMemCacheSizePercent(0.25f);
-
-        mImageFetcher = new ImageFetcher(this, getResources().getDimensionPixelSize(R.dimen.image_thumbnail_size));
-        mImageFetcher.setLoadingImage(R.drawable.post_background);
-        mImageFetcher.addImageCache(getSupportFragmentManager(), cacheParams);
 
         (moviePoster).getViewTreeObserver().addOnPreDrawListener(
                 new ViewTreeObserver.OnPreDrawListener() {
@@ -201,48 +324,27 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         );
     }
 
-    private void selectImageLoader(MovieDetails details) {
-        Application app = getApplication();
-        if (app instanceof PopularMovieApplication) {
-            popApp = (PopularMovieApplication) app;
-            if (popApp.loader == 0) {
-                mImageFetcher.loadImage(details.getPoster_path(), moviePoster, this);
-                mImageFetcher.loadImage(details.getBackdrop_path(), backdropPhoto);
-            } else if (popApp.loader == 1) {
-                Glide
-                        .with(this)
-                        .load(details.getBackdrop_path())
-                        .centerCrop()
-                        .placeholder(R.drawable.post_background)
-                        .crossFade()
-                        .into(backdropPhoto);
-                Glide
-                        .with(this)
-                        .load(details.getPoster_path())
-                        .centerCrop()
 
-                        .placeholder(R.drawable.post_background)
-                        .crossFade()
-                        .into(moviePoster);
-            } else if (popApp.loader == 2) {
-                Picasso
-                        .with(this)
-                        .load(details.getBackdrop_path())
-                        .centerCrop()
-                        .placeholder(R.drawable.post_background)
-                        .into(backdropPhoto);
-                Picasso
-                        .with(this)
-                        .load(details.getPoster_path())
-                        .centerCrop()
-                        .placeholder(R.drawable.post_background)
-                        .into(moviePoster);
-            }
-
-        } else {
-            mImageFetcher.loadImage(details.getPoster_path(), moviePoster, this);
-            mImageFetcher.loadImage(details.getBackdrop_path(), backdropPhoto);
+    @OnClick(R.id.mark_as_favorite)
+    void markAsFavClicked() {
+        if (details != null) {
+            markedAsFav = !markedAsFav;
+            ProviderUtil.updateFavorite(this, details.getMovieID(), markedAsFav);
+            details.setFavorite(markedAsFav);
+            setMarkAsFavBackground();
         }
+    }
+
+    public Palette.Swatch getDominantColor(Palette bitmap) {
+        List<Palette.Swatch> swatchesTemp = (bitmap).getSwatches();
+        List<Palette.Swatch> swatches = new ArrayList<Palette.Swatch>(swatchesTemp);
+        Collections.sort(swatches, new Comparator<Palette.Swatch>() {
+            @Override
+            public int compare(Palette.Swatch swatch1, Palette.Swatch swatch2) {
+                return swatch2.getPopulation() - swatch1.getPopulation();
+            }
+        });
+        return swatches.size() > 0 ? swatches.get(0) : null;
     }
 
     @Override
@@ -256,45 +358,31 @@ public class MovieDetailsActivity extends AppCompatActivity implements ImageWork
         return super.onOptionsItemSelected(item);
     }
 
-
-    public void createPaletteAsync(Bitmap bitmap, final MovieDetails details) {
+    public void createPaletteAsync(Bitmap bitmap, final MovieDetail details) {
 
         Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-            public void onGenerated(Palette p) {
-                // Use generated instance
+            public void onGenerated(Palette p) {                // Use generated instance
 
+                Log.d(TAG, "createPaletteAsync");
                 Palette.Swatch vibrantSwatch = getDominantColor(p);
                 if (vibrantSwatch != null) {
                     shapeDrawable.getPaint().setColor(vibrantSwatch.getRgb());
-
                     Drawable[] layers = {shapeDrawable, grad};
                     LayerDrawable bg = new LayerDrawable(layers);
 
-                    toolbar.setBackgroundColor(vibrantSwatch.getRgb());
                     toolbar.setTitleTextColor(vibrantSwatch.getTitleTextColor());
-
+                    Log.d(TAG, "Vibrant Color intValue is" + vibrantSwatch.getRgb() + " hexValue = " + Integer.toHexString(vibrantSwatch.getRgb()));
+                    ReviewAdapter.setBackgroundState(MovieDetailsActivity.this, readMoreButton, vibrantSwatch.getRgb());
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         overviewBg.setBackground(bg);
+                        toolbar.setBackground(bg);
                     } else {
+                        toolbar.setBackgroundDrawable(bg);
                         overviewBg.setBackgroundDrawable(bg);
                     }
                 }
 
             }
         });
-    }
-
-    private Palette.Swatch checkVibrantSwatch(Palette p) {
-        Palette.Swatch vibrant = p.getVibrantSwatch();
-        if (vibrant != null) {
-            return vibrant;
-        }
-        // Throw error
-        return null;
-    }
-
-    @Override
-    public void onImageLoaded(Bitmap success, ImageView view) {
-        createPaletteAsync(success, null);
     }
 }
