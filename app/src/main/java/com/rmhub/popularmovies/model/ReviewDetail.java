@@ -15,17 +15,17 @@ import com.rmhub.popularmovies.provider.Contract;
  * .
  */
 
-public class ReviewDetails implements Parcelable {
+public class ReviewDetail implements Parcelable {
 
-    public static final Creator<ReviewDetails> CREATOR = new Creator<ReviewDetails>() {
+    public static final Creator<ReviewDetail> CREATOR = new Creator<ReviewDetail>() {
         @Override
-        public ReviewDetails createFromParcel(Parcel in) {
-            return new ReviewDetails(in);
+        public ReviewDetail createFromParcel(Parcel in) {
+            return new ReviewDetail(in);
         }
 
         @Override
-        public ReviewDetails[] newArray(int size) {
-            return new ReviewDetails[size];
+        public ReviewDetail[] newArray(int size) {
+            return new ReviewDetail[size];
         }
     };
 
@@ -42,19 +42,19 @@ public class ReviewDetails implements Parcelable {
     @Expose
     private String reviewURL;
 
-    protected ReviewDetails(Parcel in) {
+    protected ReviewDetail(Parcel in) {
         id = in.readString();
         author = in.readString();
         content = in.readString();
         reviewURL = in.readString();
     }
 
-    public ReviewDetails() {
+    public ReviewDetail() {
 
     }
 
-    public static ReviewDetails buildFrom(Cursor cursor) {
-        ReviewDetails reviewDetail = new ReviewDetails();
+    public static ReviewDetail buildFrom(Cursor cursor) {
+        ReviewDetail reviewDetail = new ReviewDetail();
         reviewDetail.setAuthor(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_AUTHOR)));
         reviewDetail.setContent(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_CONTENT)));
         reviewDetail.setId(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_REVIEW_ID)));

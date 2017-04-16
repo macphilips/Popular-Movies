@@ -85,6 +85,9 @@ public class NetworkUtil {
                 DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
                 movie_category = 2;
                 break;
+            case "favorite":
+                movie_category = 3;
+                break;
         }
     }
 

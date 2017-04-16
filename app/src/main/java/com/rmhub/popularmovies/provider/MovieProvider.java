@@ -20,6 +20,8 @@ public class MovieProvider extends ContentProvider {
     private static final int REVIEWS_FOR_ID = 201;
     private static final int RECOMMENDATION = 300;
     private static final int RECOMMENDATION_FOR_ID = 301;
+    private static final int VIDEOS = 400;
+    private static final int VIDEOS_FOR_ID = 401;
 
     private static final UriMatcher uriMatcher = buildUriMatcher();
 
@@ -36,6 +38,9 @@ public class MovieProvider extends ContentProvider {
 
         matcher.addURI(Contract.AUTHORITY, Contract.REVIEWS, REVIEWS);
         matcher.addURI(Contract.AUTHORITY, Contract.PATH_REVIEWS_WITH_ID, REVIEWS_FOR_ID);
+
+        matcher.addURI(Contract.AUTHORITY, Contract.VIDEOS, REVIEWS);
+        matcher.addURI(Contract.AUTHORITY, Contract.PATH_VIDEOS_WITH_ID, VIDEOS_FOR_ID);
 
         return matcher;
     }
@@ -95,6 +100,18 @@ public class MovieProvider extends ContentProvider {
                         Contract.RECOMMENDATION,
                         projection,
                         Contract.Recommendation.COLUMN_MOVIE_ID + " = ?",
+                        new String[]{Contract.Recommendation.getMovieIDFromUri(uri)},
+                        null,
+                        null,
+                        sortOrder
+                );
+
+                break;
+            case VIDEOS_FOR_ID:
+                returnCursor = db.query(
+                        Contract.VIDEOS,
+                        projection,
+                        Contract.Video.COLUMN_MOVIE_ID + " = ?",
                         new String[]{Contract.Recommendation.getMovieIDFromUri(uri)},
                         null,
                         null,
@@ -216,6 +233,8 @@ public class MovieProvider extends ContentProvider {
                         selection,
                         selectionArgs
                 );
+
+                Log.i(MovieProvider.class.getSimpleName(), "Updated favorite ");
                 break;
 
             default:
@@ -295,6 +314,28 @@ public class MovieProvider extends ContentProvider {
                     for (ContentValues value : values) {
                         returnCount += db.insert(
                                 Contract.REVIEWS,
+                                null,
+                                value
+                        );
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+
+                context = getContext();
+                if (context != null) {
+                    context.getContentResolver().notifyChange(uri, null);
+                }
+
+                return returnCount;
+            case VIDEOS:
+                db.beginTransaction();
+                returnCount = 0;
+                try {
+                    for (ContentValues value : values) {
+                        returnCount += db.insert(
+                                Contract.VIDEOS,
                                 null,
                                 value
                         );

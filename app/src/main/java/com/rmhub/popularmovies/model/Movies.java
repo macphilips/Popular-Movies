@@ -6,10 +6,9 @@ import android.util.Log;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.MovieQuery;
+import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
-import com.rmhub.popularmovies.util.NetworkStatus;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
 import java.util.ArrayList;
@@ -57,10 +56,6 @@ public class Movies {
         @SerializedName("page")
         @Expose
         private int currentPage;
-
-        private String statusDesc = "";
-
-        private int status;
 
         public int getTotalCounts() {
             return total_count;
@@ -111,22 +106,6 @@ public class Movies {
             this.movieList = movieList;
         }
 
-        public String getStatusDesc() {
-            return statusDesc;
-        }
-
-        public void setStatusDesc(String statusDesc) {
-            this.statusDesc = statusDesc;
-        }
-
-        @NetworkStatus.Status
-        public int getStatus() {
-            return status;
-        }
-
-        public void setStatus(@NetworkStatus.Status int status) {
-            this.status = status;
-        }
 
         public int getCurrentPage() {
             return currentPage;

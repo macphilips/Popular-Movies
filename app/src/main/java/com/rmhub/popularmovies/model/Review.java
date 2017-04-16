@@ -11,7 +11,7 @@ import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by MOROLANI on 4/8/2017
@@ -59,7 +59,7 @@ public class Review {
 
         @SerializedName("results")
         @Expose
-        private List<ReviewDetails> details;
+        private ArrayList<ReviewDetail> details;
 
         @Override
         public void onFetchResult(String result) {
@@ -98,11 +98,11 @@ public class Review {
             this.page = page;
         }
 
-        public List<ReviewDetails> getDetails() {
+        public ArrayList<ReviewDetail> getDetails() {
             return details;
         }
 
-        public void setDetails(List<ReviewDetails> details) {
+        public void setDetails(ArrayList<ReviewDetail> details) {
             this.details = details;
         }
     }

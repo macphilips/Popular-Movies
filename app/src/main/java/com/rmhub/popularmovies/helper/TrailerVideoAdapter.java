@@ -1,9 +1,8 @@
 package com.rmhub.popularmovies.helper;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,15 +33,15 @@ import java.util.List;
 public class TrailerVideoAdapter extends PagerAdapter {
     private final LayoutInflater mInflater;
     private final List<VideoDetail> videoDetails = new ArrayList<>();
-    private final AppCompatActivity mCtx;
-    private final ViewPager.LayoutParams params;
-    private View.OnClickListener mListener;
+    private final Context mCtx;
+    private View.OnClickListener mPlayListener;
+    private View.OnClickListener mShareListener;
 
 
-    public TrailerVideoAdapter(final MovieDetail details, AppCompatActivity context) {
+    public TrailerVideoAdapter(final MovieDetail details, Context context) {
         mCtx = context;
         mInflater = LayoutInflater.from(context);
-        params = new ViewPager.LayoutParams();
+
         Bundle bundle = new Bundle();
         bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieVideos(details, 1));
         bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
@@ -61,8 +60,8 @@ public class TrailerVideoAdapter extends PagerAdapter {
         collection.removeView((View) view);
     }
 
-    public void setListener(View.OnClickListener mListener) {
-        this.mListener = mListener;
+    public void setPlayListener(View.OnClickListener mListener) {
+        this.mPlayListener = mListener;
     }
 
     @Override
@@ -75,9 +74,11 @@ public class TrailerVideoAdapter extends PagerAdapter {
         View v = mInflater.inflate(R.layout.trailer_item, container, false);
         final View playButton = v.findViewById(R.id.trailer_icon);
         playButton.setTag(videoDetails.get(position));
-        playButton.setOnClickListener(mListener);
+        playButton.setOnClickListener(mPlayListener);
         final View progressBar = v.findViewById(R.id.progressBar);
         TextView title = (TextView) v.findViewById(R.id.title);
+        v.findViewById(R.id.share).setTag(videoDetails.get(position));
+        v.findViewById(R.id.share).setOnClickListener(mShareListener);
         title.setText(videoDetails.get(position).getName());
         Glide
                 .with(mCtx)
@@ -116,4 +117,7 @@ public class TrailerVideoAdapter extends PagerAdapter {
     }
 
 
+    public void setShareListener(View.OnClickListener mShareListener) {
+        this.mShareListener = mShareListener;
+    }
 }

@@ -3,7 +3,7 @@ package com.rmhub.popularmovies.helper;
 import com.rmhub.popularmovies.model.MovieDetail;
 import com.rmhub.popularmovies.model.Movies;
 import com.rmhub.popularmovies.model.Review;
-import com.rmhub.popularmovies.model.ReviewDetails;
+import com.rmhub.popularmovies.model.ReviewDetail;
 import com.rmhub.popularmovies.model.Video;
 import com.rmhub.popularmovies.model.VideoDetail;
 import com.rmhub.popularmovies.util.NetworkUtil;
@@ -122,9 +122,9 @@ public class ParseResult {
         return movieDetails;
     }
 
-    private static List<ReviewDetails> parseReview(JSONArray genres)
+    private static ArrayList<ReviewDetail> parseReview(JSONArray genres)
             throws JSONException {
-        List<ReviewDetails> reviewDetailsList = new ArrayList<>();
+        ArrayList<ReviewDetail> reviewDetailsList = new ArrayList<>();
         for (int i = 0, n = genres.length(); i < n; i++) {
             reviewDetailsList.add(parseReview(genres.getJSONObject(i)));
         }
@@ -132,9 +132,9 @@ public class ParseResult {
         return reviewDetailsList;
     }
 
-    private static ReviewDetails parseReview(JSONObject genres)
+    private static ReviewDetail parseReview(JSONObject genres)
             throws JSONException {
-        ReviewDetails reviewDetail = new ReviewDetails();
+        ReviewDetail reviewDetail = new ReviewDetail();
         if (genres.has("id")) {
             reviewDetail.setId(genres.getString("id"));
         }
@@ -147,7 +147,7 @@ public class ParseResult {
         return reviewDetail;
     }
 
-    public static List<ReviewDetails> parseReview(String result, Review.Result resultCallBack) {
+    public static ArrayList<ReviewDetail> parseReview(String result, Review.Result resultCallBack) {
         try {
             JSONObject obj = new JSONObject(result);
             if (obj.has("total_results")) {
@@ -203,16 +203,6 @@ public class ParseResult {
 
     public static List<VideoDetail> parseVideo(String result, Video.Result resultCallBack) {
         try {
-            JSONObject obj = new JSONObject(result);
-            if (obj.has("total_results")) {
-                resultCallBack.setTotalResult(obj.getInt("total_results"));
-            }
-            if (obj.has("total_pages")) {
-                resultCallBack.setTotalPages(obj.getInt("total_pages"));
-            }
-            if (obj.has("page")) {
-                resultCallBack.setPage(obj.getInt("page"));
-            }
             return parseVideo(new JSONObject(result).getJSONArray("results"));
         } catch (JSONException e) {
             e.printStackTrace();

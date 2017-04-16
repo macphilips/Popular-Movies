@@ -110,11 +110,15 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     }
 
     public void reload() {
+        resetAdapter();
+        loadMovie();
+    }
+
+    private void resetAdapter() {
         movieList.clear();
         currentCount = 0;
-        //    numColumns = 0;
+        numColumns = 0;
         notifyDataSetChanged();
-        loadMovie();
     }
 
     private void addMovieList(List<MovieDetail> movieList) {
@@ -126,6 +130,15 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         notifyDataSetChanged();
         notifyItemChanged(currentCount);
     }
+
+    public void loadOfflineData(Movies.Result result) {
+        if (nextPage != -1) {
+            return;
+        }
+        resetAdapter();
+        setResult(result);
+    }
+
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -146,7 +159,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         holder.moviePoster.setLayoutParams(mImageViewLayoutParams);
         holder.moviePoster.setRadius(options.radius);
         mImageViewLayoutParams.setMargins(options.marginLeft, options.marginTop, options.marginRight, options.marginBottom);
-        //holder.container.setPadding(options.marginLeft, options.marginTop, options.marginRight, options.marginBottom);
+
         Glide
                 .with(mContext)
                 .load(tag.getPoster_path())
@@ -163,7 +176,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     }
 
     private boolean hasMoreItemToLoad() {
-        return currentCount < totalCount;
+        return currentCount < totalCount && nextPage > 0;
     }
 
     private int getNumColumns() {
@@ -188,7 +201,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         setImageLayoutSize(itemWidth, itemHeight);
         notifyDataSetChanged();
     }
-
 
     public void onSaveInstanceState(Bundle outState) {
         outState.putInt(CURRENT_PAGE_NUMBER, nextPage);
@@ -224,11 +236,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                 if (onLoadAdapter != null) {
                     onLoadAdapter.success();
                 }
-                totalCount = result.getTotalCounts();
-                totalPages = result.getTotalPages();
-                nextPage = result.getCurrentPage() + 1;
-                addMovieList(result.getMovieList());
-                mScrollChange.setLoading();
+                if (result.getCurrentPage() == 1) resetAdapter();
+                setResult(result);
             }
 
             @Override
@@ -243,10 +252,18 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
             public void onNetworkError() {
                 super.onNetworkError();
                 if (onLoadAdapter != null) {
-                    onLoadAdapter.failed("No Internet Connection");
+                    onLoadAdapter.failed(mContext.getResources().getString(R.string.no_network_connection_toast));
                 }
             }
         });
+    }
+
+    private void setResult(Movies.Result result) {
+        totalCount = result.getTotalCounts();
+        totalPages = result.getTotalPages();
+        nextPage = result.getCurrentPage();
+        addMovieList(result.getMovieList());
+        mScrollChange.setLoading();
     }
 
     public void setLoadAdapter(OnLoadAdapter listener) {

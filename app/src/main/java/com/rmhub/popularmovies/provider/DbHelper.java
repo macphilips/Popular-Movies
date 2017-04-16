@@ -28,6 +28,7 @@ class DbHelper extends SQLiteOpenHelper {
                 + Contract.Movies.COLUMN_RELEASE_DATE + " TEXT NOT NULL, "
                 + Contract.Movies.COLUMN_AVERAGE_VOTE + " TEXT NOT NULL, "
                 + Contract.Movies.COLUMN_CATEGORY + " INTEGER NOT NULL DEFAULT \'0\', "
+                + Contract.Movies.COLUMN_POPULARITY + " REAL NOT NULL DEFAULT \'0\', "
                 + Contract.Movies.FAVORITE + " INTEGER NOT NULL DEFAULT \'0\'" +
                 ");";
 
@@ -38,6 +39,16 @@ class DbHelper extends SQLiteOpenHelper {
                 + Contract.Reviews.COLUMN_REVIEW_URL + " TEXT NOT NULL, "
                 + Contract.Reviews.COLUMN_MOVIE_ID + " INTEGER references " + Contract.MOVIES + " (" + Contract.Movies.COLUMN_MOVIE_ID + "), "
                 + Contract.Reviews.COLUMN_AUTHOR + " TEXT NOT NULL "
+                + ");";
+
+        String video_table = "CREATE TABLE " + Contract.VIDEOS + " ("
+                + Contract.Reviews._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + Contract.Video.COLUMN_VIDEO_ID + " TEXT NOT NULL, "
+                + Contract.Video.COLUMN_SITE + " TEXT NOT NULL, "
+                + Contract.Video.COLUMN_NAME + " TEXT NOT NULL, "
+                + Contract.Video.COLUMN_SIZE + " INTEGER NOT NULL, "
+                + Contract.Video.COLUMN_MOVIE_ID + " INTEGER references " + Contract.MOVIES + " (" + Contract.Movies.COLUMN_MOVIE_ID + "), "
+                + Contract.Video.COLUMN_TYPE + " TEXT NOT NULL "
                 + ");";
 
 
@@ -51,6 +62,7 @@ class DbHelper extends SQLiteOpenHelper {
         db.execSQL(movie_table);
         db.execSQL(review_table);
         db.execSQL(recommendation_table);
+        db.execSQL(video_table);
 
         Log.v(getClass().getSimpleName(),"onCreate database");
 

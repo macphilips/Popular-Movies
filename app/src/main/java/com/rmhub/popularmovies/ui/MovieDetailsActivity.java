@@ -9,6 +9,7 @@ import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
@@ -17,6 +18,11 @@ import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,11 +48,12 @@ import com.rmhub.popularmovies.helper.TrailerVideoAdapter;
 import com.rmhub.popularmovies.model.MovieDetail;
 import com.rmhub.popularmovies.model.Movies;
 import com.rmhub.popularmovies.model.Review;
-import com.rmhub.popularmovies.model.ReviewDetails;
+import com.rmhub.popularmovies.model.ReviewDetail;
 import com.rmhub.popularmovies.model.VideoDetail;
 import com.rmhub.popularmovies.util.MovieRequest;
 import com.rmhub.popularmovies.util.NetworkUtil;
 import com.rmhub.popularmovies.util.ProviderUtil;
+import com.rmhub.popularmovies.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -152,16 +159,49 @@ public class MovieDetailsActivity extends AppCompatActivity {
         setupTrailerVideoAdapter(details);
     }
 
-    public void setMarkAsFavBackground() {
-        if (markedAsFav) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                markAsFavButton.setBackground(getResources().getDrawable(R.drawable.marked_as_favorite));
-                markAsFavButton.setTextColor(Color.WHITE);
-            } else {
-                markAsFavButton.setBackgroundDrawable(getResources().getDrawable(R.drawable.mark_as_favorite));
-                markAsFavButton.setTextColor(Color.BLACK);
-            }
+    public static void makeTextViewResizable(final TextView tv, final int maxLine, final String expandText, final boolean viewMore) {
+
+        if (tv.getTag() == null) {
+            tv.setTag(tv.getText());
         }
+        ViewTreeObserver vto = tv.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @Override
+            public void onGlobalLayout() {
+                if (Utils.hasJellyBean()) {
+                    tv.getViewTreeObserver()
+                            .removeOnGlobalLayoutListener(this);
+                } else {
+                    tv.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                }
+                if (maxLine == 0) {
+                    int lineEndIndex = tv.getLayout().getLineEnd(0);
+                    String text = tv.getText().subSequence(0, lineEndIndex - expandText.length() + 1) + " " + expandText;
+                    tv.setText(text);
+                    tv.setMovementMethod(LinkMovementMethod.getInstance());
+                    tv.setText(
+                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, maxLine, expandText,
+                                    viewMore), TextView.BufferType.SPANNABLE);
+                } else if (maxLine > 0 && tv.getLineCount() >= maxLine) {
+                    int lineEndIndex = tv.getLayout().getLineEnd(maxLine - 1);
+                    String text = tv.getText().subSequence(0, lineEndIndex - expandText.length() + 1) + " " + expandText;
+                    tv.setText(text);
+                    tv.setMovementMethod(LinkMovementMethod.getInstance());
+                    tv.setText(
+                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, maxLine, expandText,
+                                    viewMore), TextView.BufferType.SPANNABLE);
+                } else {
+                    int lineEndIndex = tv.getLayout().getLineEnd(tv.getLayout().getLineCount() - 1);
+                    String text = tv.getText().subSequence(0, lineEndIndex) + " " + expandText;
+                    tv.setText(text);
+                    tv.setMovementMethod(LinkMovementMethod.getInstance());
+                    tv.setText(
+                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, lineEndIndex, expandText,
+                                    viewMore), TextView.BufferType.SPANNABLE);
+                }
+            }
+        });
 
     }
 
@@ -207,68 +247,65 @@ public class MovieDetailsActivity extends AppCompatActivity {
         mAdapter.loadMovie(recommendationQuery);
     }
 
-    private void setupReviewLayout(List<ReviewDetails> details) {
-        if (details.isEmpty()) {
-            mReview.setVisibility(View.GONE);
+    private static SpannableStringBuilder addClickablePartTextViewResizable(final Spanned strSpanned, final TextView tv,
+                                                                            final int maxLine, final String spanableText, final boolean viewMore) {
+        String str = strSpanned.toString();
+        SpannableStringBuilder ssb = new SpannableStringBuilder(strSpanned);
+
+        if (str.contains(spanableText)) {
+            ssb.setSpan(new ClickableSpan() {
+
+                @Override
+                public void onClick(View widget) {
+
+                    if (viewMore) {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, -1, "View Less", false);
+                    } else {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, 3, "View More", true);
+                    }
+
+                }
+            }, str.indexOf(spanableText), str.indexOf(spanableText) + spanableText.length(), 0);
+
         }
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources().getDimensionPixelSize(R.dimen.divider));
-        int n = Math.min(details.size(), 3);
-        for (int i = 0; i < n; i++) {
-            View v = getLayoutInflater().inflate(R.layout.review_item, null);
-            v.setLayoutParams(params);
-            params.setMargins(30, 10, 30, 10);
+        return ssb;
 
-
-            ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
-            ((TextView) v.findViewById(R.id.review)).setText(details.get(i).getContent());
-            String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
-
-            TextDrawable drawable1 = TextDrawable.builder()
-                    .beginConfig()
-                    .bold()
-                    .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
-                    .endConfig()
-                    .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                (v.findViewById(R.id.review_avatar)).setBackground(drawable1);
-            } else {
-                (v.findViewById(R.id.review_avatar)).setBackgroundDrawable(drawable1);
-            }
-            mRvReview.addView(v);
-            if (i >= 0 && i < n - 1 && n != 1) {
-                View divider = new View(this);
-                divider.setLayoutParams(dividerParams);
-                dividerParams.setMargins(30, 10, 30, 10);
-                divider.setBackgroundColor(getResources().getColor(R.color.load_button_start));
-                mRvReview.addView(divider);
-            }
-        }
-        if (details.size() > n) {
-            readMoreButton.setLayoutParams(params);
-            params.setMargins(30, 10, 30, 10);
-            mRvReview.addView(readMoreButton);
-            readMoreButton.setText(String.format(Locale.US, "Read All Reviews %d", details.size()));
-            ReviewAdapter.setBackgroundState(this, readMoreButton, 0);
-        } else {
-            readMoreButton = null;
-        }
     }
 
-    private void setupTrailerVideoAdapter(MovieDetail details) {
-        TrailerVideoAdapter adapter = new TrailerVideoAdapter(details, this);
-        adapter.setListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(NetworkUtil.buildYoutubeVideoURL((VideoDetail) v.getTag()))));
+    private static SpannableStringBuilder addClickablePartTextViewResizables(final Spanned strSpanned, final TextView tv,
+                                                                             final int maxLine, final String spanableText, final boolean viewMore) {
+        String str = strSpanned.toString();
+        SpannableStringBuilder ssb = new SpannableStringBuilder(strSpanned);
 
-            }
-        });
-        mPager.setAdapter(adapter);
-        indicatorView = (PageIndicatorView) findViewById(R.id.pageindicatorview);
-        indicatorView.setViewPager(mPager);
-        indicatorView.setOrientation(Orientation.HORIZONTAL);
+        if (str.contains(spanableText)) {
+
+
+            ssb.setSpan(new MySpanable(false) {
+                @Override
+                public void onClick(View widget) {
+                    if (viewMore) {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, -1, "View Less", false);
+                    } else {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, 3, "View More", true);
+                    }
+                }
+            }, str.indexOf(spanableText), str.indexOf(spanableText) + spanableText.length(), 0);
+
+        }
+        return ssb;
+
     }
 
     private void setupShapeDrawable() {
@@ -324,15 +361,27 @@ public class MovieDetailsActivity extends AppCompatActivity {
         );
     }
 
+    public void setMarkAsFavBackground() {
+        Drawable drawable;
+        String text = null;
+        int color;
+        if (markedAsFav) {
+            drawable = getResources().getDrawable(R.drawable.marked_as_favorite);
+            text = "Marked as Favorite";
+            color = Color.WHITE;
+        } else {
 
-    @OnClick(R.id.mark_as_favorite)
-    void markAsFavClicked() {
-        if (details != null) {
-            markedAsFav = !markedAsFav;
-            ProviderUtil.updateFavorite(this, details.getMovieID(), markedAsFav);
-            details.setFavorite(markedAsFav);
-            setMarkAsFavBackground();
+            drawable = getResources().getDrawable(R.drawable.mark_as_favorite);
+            text = "Mark as Favorite";
+            color = Color.BLACK;
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            markAsFavButton.setBackground(drawable);
+        } else {
+            markAsFavButton.setBackgroundDrawable(drawable);
+        }
+        markAsFavButton.setTextColor(color);
+        markAsFavButton.setText(text);
     }
 
     public Palette.Swatch getDominantColor(Palette bitmap) {
@@ -347,6 +396,63 @@ public class MovieDetailsActivity extends AppCompatActivity {
         return swatches.size() > 0 ? swatches.get(0) : null;
     }
 
+    private void setupReviewLayout(final ArrayList<ReviewDetail> details) {
+        if (details.isEmpty()) {
+            mReview.setVisibility(View.GONE);
+        }
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources().getDimensionPixelSize(R.dimen.divider));
+        int n = Math.min(details.size(), 3);
+        for (int i = 0; i < n; i++) {
+            View v = getLayoutInflater().inflate(R.layout.review_item, null);
+            v.setLayoutParams(params);
+            params.setMargins(30, 10, 30, 10);
+
+
+            ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
+            ((TextView) v.findViewById(R.id.review)).setText(details.get(i).getContent());
+            String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
+
+            TextDrawable drawable1 = TextDrawable.builder()
+                    .beginConfig()
+                    .bold()
+                    .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
+                    .endConfig()
+                    .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                (v.findViewById(R.id.review_avatar)).setBackground(drawable1);
+            } else {
+                (v.findViewById(R.id.review_avatar)).setBackgroundDrawable(drawable1);
+            }
+            mRvReview.addView(v);
+            if (i >= 0 && i < n - 1 && n != 1) {
+                View divider = new View(this);
+                divider.setLayoutParams(dividerParams);
+                dividerParams.setMargins(30, 10, 30, 10);
+                divider.setBackgroundColor(getResources().getColor(R.color.load_button_start));
+                mRvReview.addView(divider);
+            }
+        }
+        if (details.size() > n) {
+            readMoreButton.setLayoutParams(params);
+            params.setMargins(30, 10, 30, 10);
+            mRvReview.addView(readMoreButton);
+            readMoreButton.setText(String.format(Locale.US, "Read All Reviews %d", details.size()));
+            ReviewAdapter.setBackgroundState(this, readMoreButton, 0);
+            readMoreButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent i = new Intent();
+                    i.putParcelableArrayListExtra(ReviewActivity.REVIEW_LIST, details);
+                    startActivity(i);
+                }
+            });
+        } else {
+            readMoreButton = null;
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -356,6 +462,32 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setupTrailerVideoAdapter(MovieDetail details) {
+        TrailerVideoAdapter adapter = new TrailerVideoAdapter(details, this);
+        adapter.setPlayListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(NetworkUtil.buildYoutubeVideoURL((VideoDetail) v.getTag()))));
+
+            }
+        });
+        adapter.setShareListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //     Object tag = v.getTag();
+                Intent sendIntent = new Intent();
+                sendIntent.setAction(Intent.ACTION_SEND);
+                sendIntent.putExtra(Intent.EXTRA_TEXT, NetworkUtil.buildYoutubeVideoURL((VideoDetail) v.getTag()));
+                sendIntent.setType("text/plain");
+                startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.send_to)));
+            }
+        });
+        mPager.setAdapter(adapter);
+        indicatorView = (PageIndicatorView) findViewById(R.id.pageindicatorview);
+        indicatorView.setViewPager(mPager);
+        indicatorView.setOrientation(Orientation.HORIZONTAL);
     }
 
     public void createPaletteAsync(Bitmap bitmap, final MovieDetail details) {
@@ -384,5 +516,22 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @OnClick(R.id.mark_as_favorite)
+    synchronized void markAsFavClicked() {
+        if (details != null) {
+            markedAsFav = !markedAsFav;
+            ProviderUtil.updateFavorite(this, details.getMovieID(), markedAsFav);
+            details.setFavorite(markedAsFav);
+            new AsyncTask<Boolean, Void, Integer>() {
+
+                @Override
+                protected Integer doInBackground(Boolean... params) {
+                    return ProviderUtil.updateFavorite(MovieDetailsActivity.this, details.getMovieID(), params[0]);
+                }
+            }.execute(markedAsFav);
+            setMarkAsFavBackground();
+        }
     }
 }

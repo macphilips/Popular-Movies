@@ -9,6 +9,8 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.provider.Contract;
 
+import java.util.ArrayList;
+
 /**
  * Created by MOROLANI on 3/27/2017
  * <p>
@@ -18,17 +20,6 @@ import com.rmhub.popularmovies.provider.Contract;
 
 public class MovieDetail implements Parcelable {
 
-    public static final Creator<MovieDetail> CREATOR = new Creator<MovieDetail>() {
-        @Override
-        public MovieDetail createFromParcel(Parcel in) {
-            return new MovieDetail(in);
-        }
-
-        @Override
-        public MovieDetail[] newArray(int size) {
-            return new MovieDetail[size];
-        }
-    };
     private static final String BASE_PATH = "https://image.tmdb.org/t/p";
     private static final String POSTER_SIZE_SMALL = "/w92/";
     private static final String POSTER_SIZE = "/w185/";
@@ -111,14 +102,26 @@ public class MovieDetail implements Parcelable {
     @SerializedName("popularity")
     @Expose
     private double popularity;
+
     private boolean favorite;
     private int category;
 
-    public MovieDetail() {
+    public static final Creator<MovieDetail> CREATOR = new Creator<MovieDetail>() {
+        @Override
+        public MovieDetail createFromParcel(Parcel in) {
+            return new MovieDetail(in);
+        }
 
-    }
+        @Override
+        public MovieDetail[] newArray(int size) {
+            return new MovieDetail[size];
+        }
+    };
+    private ArrayList<MovieDetail> recommendations;
+    private ArrayList<ReviewDetail> reviews;
+    private ArrayList<VideoDetail> videos;
 
-    public MovieDetail(Parcel in) {
+    protected MovieDetail(Parcel in) {
         video = in.readByte() != 0;
         belongs_to_collection = in.readString();
         homepage = in.readString();
@@ -142,6 +145,17 @@ public class MovieDetail implements Parcelable {
         popularity = in.readDouble();
         favorite = in.readByte() != 0;
         category = in.readInt();
+        recommendations = in.createTypedArrayList(MovieDetail.CREATOR);
+        reviews = in.createTypedArrayList(ReviewDetail.CREATOR);
+        videos = in.createTypedArrayList(VideoDetail.CREATOR);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public MovieDetail() {
     }
 
     public static MovieDetail buildFrom(Cursor cursor) {
@@ -160,6 +174,8 @@ public class MovieDetail implements Parcelable {
             details.setOverview(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_PLOT)));
 
             details.setMovieID((cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_MOVIE_ID))));
+
+            details.setPopularity((cursor.getDouble(cursor.getColumnIndexOrThrow(Contract.Movies.COLUMN_POPULARITY))));
 
             details.setFavorite(cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.FAVORITE)) == 1);
 
@@ -195,11 +211,33 @@ public class MovieDetail implements Parcelable {
         dest.writeDouble(popularity);
         dest.writeByte((byte) (favorite ? 1 : 0));
         dest.writeInt(category);
+        dest.writeTypedList(recommendations);
+        dest.writeTypedList(reviews);
+        dest.writeTypedList(videos);
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
+    public ArrayList<MovieDetail> getRecommendations() {
+        return recommendations;
+    }
+
+    public void setRecommendations(ArrayList<MovieDetail> recommendations) {
+        this.recommendations = recommendations;
+    }
+
+    public ArrayList<ReviewDetail> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(ArrayList<ReviewDetail> reviews) {
+        this.reviews = reviews;
+    }
+
+    public ArrayList<VideoDetail> getVideos() {
+        return videos;
+    }
+
+    public void setVideos(ArrayList<VideoDetail> videos) {
+        this.videos = videos;
     }
 
     public boolean isAdult() {
@@ -400,4 +438,5 @@ public class MovieDetail implements Parcelable {
                 ", vote_average=" + vote_average +
                 '}';
     }
+
 }

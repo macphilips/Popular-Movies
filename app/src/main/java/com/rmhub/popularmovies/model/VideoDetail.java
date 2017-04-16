@@ -1,10 +1,12 @@
 package com.rmhub.popularmovies.model;
 
+import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.rmhub.popularmovies.provider.Contract;
 
 /**
  * Created by MOROLANI on 4/8/2017
@@ -118,5 +120,15 @@ public class VideoDetail implements Parcelable {
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public static VideoDetail buildFrom(Cursor cursor) {
+        VideoDetail detail = new VideoDetail();
+        detail.setName(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_NAME)));
+        detail.setSite(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_SITE)));
+        detail.setVideoID(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_VIDEO_ID)));
+        detail.setSize(cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_SIZE)));
+        detail.setType(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_TYPE)));
+        return detail;
     }
 }

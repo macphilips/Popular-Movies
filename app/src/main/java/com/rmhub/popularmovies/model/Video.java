@@ -1,5 +1,6 @@
 package com.rmhub.popularmovies.model;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import com.google.gson.annotations.Expose;
@@ -7,6 +8,7 @@ import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.MovieQuery;
 import com.rmhub.popularmovies.helper.ResultHandler;
+import com.rmhub.popularmovies.util.ProviderUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,14 +43,13 @@ public class Video {
 
         @SerializedName("id")
         @Expose
-        private int nextPage;
+        private int id;
 
         @SerializedName("results")
         @Expose
         private List<VideoDetail> videoDetails = new ArrayList<>();
-        private int totalResult;
-        private int totalPages;
-        private int page;
+
+
 
         public List<VideoDetail> getVideoDetails() {
             return videoDetails;
@@ -63,28 +64,9 @@ public class Video {
             videoDetails = ParseResult.parseVideo(result, this);
         }
 
-        public int getTotalResult() {
-            return totalResult;
-        }
-
-        public void setTotalResult(int totalResult) {
-            this.totalResult = totalResult;
-        }
-
-        public int getTotalPages() {
-            return totalPages;
-        }
-
-        public void setTotalPages(int totalPages) {
-            this.totalPages = totalPages;
-        }
-
-        public int getPage() {
-            return page;
-        }
-
-        public void setPage(int page) {
-            this.page = page;
+        @Override
+        public void saveToDatabase(Context context, MovieDetail moveID) {
+            ProviderUtil.insertVideos(context,moveID,videoDetails);
         }
     }
 }
