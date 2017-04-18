@@ -256,8 +256,11 @@ public class MovieDetail implements Parcelable {
         this.video = video;
     }
 
-    public String getBackdrop_path() {
+    public String getBackdropURL() {
         return BASE_PATH + BACKDROP_SIZE + backdrop_path;
+    }
+    public String getBackdrop_path() {
+        return backdrop_path;
     }
 
     public void setBackdrop_path(String backdrop_path) {
@@ -312,8 +315,12 @@ public class MovieDetail implements Parcelable {
         this.overview = overview;
     }
 
-    public String getPoster_path() {
+    public String getPosterURL() {
         return BASE_PATH + POSTER_SIZE + poster_path;
+    }
+
+    public String getPoster_path() {
+        return  poster_path;
     }
 
     public void setPoster_path(String poster_path) {

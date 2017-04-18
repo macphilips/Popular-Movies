@@ -5,8 +5,8 @@ import android.os.Bundle;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.MovieQuery;
+import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
@@ -30,7 +30,6 @@ public class Video {
         public Query(Bundle query) {
             this.query = query;
         }
-
         @Override
         public Bundle queryBundle() {
             return query;
@@ -40,7 +39,6 @@ public class Video {
 
     public static class Result extends ResultHandler {
 
-
         @SerializedName("id")
         @Expose
         private int id;
@@ -49,7 +47,13 @@ public class Video {
         @Expose
         private List<VideoDetail> videoDetails = new ArrayList<>();
 
-
+        @Override
+        public String toString() {
+            return "Result{" +
+                    "id=" + id +
+                    ", videoDetails=" + videoDetails +
+                    '}';
+        }
 
         public List<VideoDetail> getVideoDetails() {
             return videoDetails;
@@ -67,6 +71,11 @@ public class Video {
         @Override
         public void saveToDatabase(Context context, MovieDetail moveID) {
             ProviderUtil.insertVideos(context,moveID,videoDetails);
+        }
+
+        @Override
+        public void loadFromDB(Context ctx, MovieDetail detail) {
+            videoDetails = ProviderUtil.getVideos(ctx, detail);
         }
     }
 }

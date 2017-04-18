@@ -71,21 +71,6 @@
             tools:layout_constraintRight_creator="1"
             tools:layout_constraintTop_creator="1" />
 
-        <com.rd.PageIndicatorView
-            android:id="@+id/pageindicatorview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            app:layout_constraintBottom_toBottomOf="@+id/viewPager"
-            app:layout_constraintLeft_toLeftOf="@+id/viewPager"
-            app:layout_constraintRight_toRightOf="@+id/viewPager"
-            app:piv_animationType="drop"
-            app:piv_dynamicCount="true"
-            app:piv_interactiveAnimation="true"
-            app:piv_padding="16dp"
-            app:piv_radius="3.5dp"
-            app:piv_viewPager="@+id/viewPager" />
-
         <View
             android:id="@+id/view"
             android:layout_width="0dp"
@@ -136,7 +121,6 @@
 
         </android.support.v7.widget.CardView>
 
-
         <TextView
             android:id="@+id/movie_title"
             android:layout_width="0dp"
@@ -154,7 +138,6 @@
             app:layout_constraintTop_toTopOf="@+id/movie_poster_container"
             tools:text="@string/movie_title" />
 
-
         <TextView
             android:id="@+id/movie_release_year"
             android:layout_width="wrap_content"
@@ -166,7 +149,6 @@
             app:layout_constraintLeft_toLeftOf="@+id/movie_title"
             app:layout_constraintTop_toBottomOf="@+id/movie_title"
             tools:text="@string/release_date" />
-
 
         <TextView
             android:id="@+id/rating_txt"
@@ -197,6 +179,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/movie_poster_container"
             app:layout_constraintHorizontal_bias="0.49" />
+
         <TextView
             android:id="@+id/movie_rating"
             android:layout_width="wrap_content"
@@ -277,7 +260,6 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/review_title" />
 
-
         <TextView
             android:id="@+id/recommendation"
             android:layout_width="wrap_content"
@@ -299,8 +281,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:layout_marginBottom="10dp"
+            android:padding="5dp"
             android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/recommendation" />
@@ -333,13 +315,28 @@
             android:id="@+id/viewPager"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="?attr/colorPrimary"
+            android:background="@color/black"
             app:layout_constraintBottom_toBottomOf="@id/dummy_backdrop"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintLeft_toLeftOf="@id/dummy_backdrop"
             app:layout_constraintRight_toRightOf="@id/dummy_backdrop"
             app:layout_constraintTop_toTopOf="@id/dummy_backdrop"
             app:layout_constraintVertical_bias="0.0" />
+
+        <com.rd.PageIndicatorView
+            android:id="@+id/pageindicatorview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            app:layout_constraintBottom_toBottomOf="@+id/viewPager"
+            app:layout_constraintLeft_toLeftOf="@+id/viewPager"
+            app:layout_constraintRight_toRightOf="@+id/viewPager"
+            app:piv_animationType="drop"
+            app:piv_dynamicCount="true"
+            app:piv_interactiveAnimation="true"
+            app:piv_padding="16dp"
+            app:piv_radius="3.5dp"
+            app:piv_viewPager="@+id/viewPager" />
 
     </android.support.constraint.ConstraintLayout>
 </ScrollView>

@@ -69,12 +69,24 @@ public class ProviderUtil {
     public static List<MovieDetail> insertRecommendation(Context context, MovieDetail detail, List<MovieDetail> details) {
 
         List<ContentValues> recommendationCVs = new ArrayList<>();
+        List<ContentValues> movieCVs = new ArrayList<>();
         for (MovieDetail recommended : details) {
-
             ContentValues recommendationCV = new ContentValues();
             recommendationCV.put(Contract.Recommendation.COLUMN_MOVIE_ID, detail.getMovieID());
             recommendationCV.put(Contract.Recommendation.COLUMN_RECOMMENDED_ID, recommended.getMovieID());
             recommendationCVs.add(recommendationCV);
+
+            ContentValues movieCV = new ContentValues();
+            movieCV.put(Contract.Movies.COLUMN_AVERAGE_VOTE, recommended.getVote_average());
+            movieCV.put(Contract.Movies.COLUMN_BACKDROP_URL, recommended.getBackdrop_path());
+            movieCV.put(Contract.Movies.COLUMN_MOVIE_ID, recommended.getMovieID());
+            movieCV.put(Contract.Movies.COLUMN_MOVIE_TITLE, recommended.getTitle());
+            movieCV.put(Contract.Movies.FAVORITE, recommended.getFavorite());
+            movieCV.put(Contract.Movies.COLUMN_POSTER_URL, recommended.getPoster_path());
+            movieCV.put(Contract.Movies.COLUMN_PLOT, recommended.getOverview());
+            movieCV.put(Contract.Movies.COLUMN_RELEASE_DATE, recommended.getRelease_date());
+            movieCV.put(Contract.Movies.COLUMN_CATEGORY, recommended.getCategory());
+            movieCVs.add(movieCV);
 
         }
 
@@ -83,7 +95,11 @@ public class ProviderUtil {
                         Contract.Recommendation.URI,
                         recommendationCVs.toArray(new ContentValues[recommendationCVs.size()]));
 
-        if (result > 0) {
+        int result1 = context.getContentResolver()
+                .bulkInsert(
+                        Contract.Movies.URI,
+                        movieCVs.toArray(new ContentValues[movieCVs.size()]));
+        if (result > 0 && result1 > 0) {
             return details;
         }
         return new ArrayList<>();
@@ -147,9 +163,9 @@ public class ProviderUtil {
 
     }
 
-    public static List<MovieDetail> getMovies(Context context) {
+    public static ArrayList<MovieDetail> getMovies(Context context) {
 
-        Log.d(ProviderUtil.class.getSimpleName(), "getMovies");
+        ArrayList<MovieDetail> arrayList = new ArrayList<>();
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
         String key = settings.getString(context.getResources().getString(R.string.sort_key), context.getString(R.string.sort_default_value));
         String orderBy = "";
@@ -169,34 +185,23 @@ public class ProviderUtil {
                 null);
 
         if (cursor == null || isCursorEmpty(cursor)) {
-            Log.d(ProviderUtil.class.getSimpleName(), "Cursor is empty or null");
-            return new ArrayList<>();
+            return arrayList;
         }
         cursor.moveToFirst();
-        List<MovieDetail> arrayList = new ArrayList<>();
         while (true) {
             MovieDetail emp = MovieDetail.buildFrom(cursor);
             arrayList.add(emp);
-            Log.d(TAG, "Popularity " + emp.getPopularity() + " Rating " + emp.getVote_average());
+            Log.d(TAG, String.valueOf(emp));
             if (!cursor.moveToNext())
                 break;
         }
         cursor.close();
-        for (MovieDetail emp : arrayList) {
-            getReviews(context, emp);
-        }
-        for (MovieDetail emp : arrayList) {
-            getRecommendations(context, emp);
-        }
-        for (MovieDetail emp : arrayList) {
-            getVideos(context, emp);
-        }
         return arrayList;
     }
 
-    public static List<MovieDetail> getFavorite(Context context) {
-        List<MovieDetail> arrayList = getMovies(context);
-        List<MovieDetail> result = new ArrayList<>();
+    public static ArrayList<MovieDetail> getFavorite(Context context) {
+        ArrayList<MovieDetail> arrayList = getMovies(context);
+        ArrayList<MovieDetail> result = new ArrayList<>();
         for (MovieDetail detail :
                 arrayList) {
             if (detail.getFavorite()) {
@@ -206,31 +211,28 @@ public class ProviderUtil {
         return result;
     }
 
-    public static List<MovieDetail> getRecommendations(Context context, MovieDetail details) {
+    public static ArrayList<MovieDetail> getRecommendations(Context context, MovieDetail details) {
 
-        Log.d(ProviderUtil.class.getSimpleName(), "getMovies");
+        ArrayList<MovieDetail> arrayList = new ArrayList<>();
         Cursor recommendationCursor = ContentResolverCompat.query(context.getContentResolver(),
                 Contract.Recommendation.makeWithID(details.getMovieID()),
                 null, null, null, null, null);
         if (recommendationCursor == null || isCursorEmpty(recommendationCursor)) {
-            details.setRecommendations(new ArrayList<MovieDetail>());
-            return new ArrayList<>();
+            details.setRecommendations(arrayList);
+            return arrayList;
         }
         recommendationCursor.moveToFirst();
-        ArrayList<MovieDetail> arrayList = new ArrayList<>();
         while (true) {
             int recommendationID = recommendationCursor.getInt(
                     recommendationCursor.getColumnIndexOrThrow(Contract.Recommendation.COLUMN_RECOMMENDED_ID));
-
             Cursor movieCursor = ContentResolverCompat.query(context.getContentResolver(),
                     Contract.Movies.makeUriForId(recommendationID),
                     null, null, null, null, null);
-
-            if (movieCursor == null || isCursorEmpty(movieCursor)) continue;
-
-            movieCursor.moveToFirst();
-            arrayList.add(MovieDetail.buildFrom(movieCursor));
-            movieCursor.close();
+            if (movieCursor != null && !isCursorEmpty(movieCursor)) {
+                movieCursor.moveToFirst();
+                arrayList.add(MovieDetail.buildFrom(movieCursor));
+                movieCursor.close();
+            }
             if (!recommendationCursor.moveToNext())
                 break;
         }
@@ -239,17 +241,16 @@ public class ProviderUtil {
         return arrayList;
     }
 
-    public static List<ReviewDetail> getReviews(Context context, MovieDetail details) {
-        Log.d(ProviderUtil.class.getSimpleName(), "getMovies");
+    public static ArrayList<ReviewDetail> getReviews(Context context, MovieDetail details) {
+        ArrayList<ReviewDetail> arrayList = new ArrayList<>();
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Reviews.makeUriWithID(details.getMovieID()),
                 null, null, null, null, null);
         if (cursor == null || isCursorEmpty(cursor)) {
-            details.setReviews(new ArrayList<ReviewDetail>());
-            return new ArrayList<>();
+            details.setReviews(arrayList);
+            return arrayList;
         }
 
         cursor.moveToFirst();
-        ArrayList<ReviewDetail> arrayList = new ArrayList<>();
         while (true) {
             ReviewDetail emp = ReviewDetail.buildFrom(cursor);
             arrayList.add(emp);
@@ -262,26 +263,27 @@ public class ProviderUtil {
     }
 
 
-    public static void getVideos(Context context, MovieDetail details) {
-        Log.d(ProviderUtil.class.getSimpleName(), "getMovies");
+    public static ArrayList<VideoDetail> getVideos(Context context, MovieDetail details) {
+        ArrayList<VideoDetail> arrayList = new ArrayList<>();
 
-        Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Reviews.makeUriWithID(details.getMovieID()),
+        Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Video.makeUriWithID(details.getMovieID()),
                 null, null, null, null, null);
         if (cursor == null || isCursorEmpty(cursor)) {
-            details.setVideos(new ArrayList<VideoDetail>());
-            return;
+            details.setVideos(arrayList);
+            return arrayList;
         }
 
         cursor.moveToFirst();
-        ArrayList<VideoDetail> arrayList = new ArrayList<>();
         while (true) {
             VideoDetail emp = VideoDetail.buildFrom(cursor);
             arrayList.add(emp);
+
             if (!cursor.moveToNext())
                 break;
         }
         cursor.close();
         details.setVideos(arrayList);
+        return arrayList;
     }
 
     private static boolean isCursorEmpty(Cursor cursor) {

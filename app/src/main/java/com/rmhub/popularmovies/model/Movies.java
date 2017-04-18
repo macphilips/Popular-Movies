@@ -2,7 +2,6 @@ package com.rmhub.popularmovies.model;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -84,15 +83,12 @@ public class Movies {
         @Override
         public void saveToDatabase(Context context) {
             if (movieList != null) {
-                Log.d(getClass().getSimpleName(), "insert movies into database");
                 ProviderUtil.insertMovies(context, movieList);
-                Log.v(getClass().getSimpleName(), "" + ProviderUtil.getMovies(context).size());
             }
         }
 
         @Override
         public void saveToDatabase(Context context, MovieDetail moveID) {
-            super.saveToDatabase(context, moveID);
             if (movieList != null) {
                 ProviderUtil.insertRecommendation(context, moveID, movieList);
             }
@@ -114,6 +110,34 @@ public class Movies {
         public void setCurrentPage(int currentPage) {
             this.currentPage = currentPage + 1;
         }
+
+        @Override
+        public void loadFromDB(Context ctx, MovieDetail detail) {
+            movieList = ProviderUtil.getRecommendations(ctx, detail);
+            currentPage = -1;
+            total_count = movieList.size();
+            total_page = -1;
+        }
+
+        @Override
+        public void loadFromDB(Context ctx) {
+            movieList = ProviderUtil.getMovies(ctx);
+            currentPage = -1;
+            total_count = movieList.size();
+            total_page = -1;
+
+        }
+
+        @Override
+        public String toString() {
+            return "Result{" +
+                    "movieList=" + movieList +
+                    ", total_count=" + total_count +
+                    ", total_page=" + total_page +
+                    ", currentPage=" + currentPage +
+                    '}';
+        }
     }
+
 
 }

@@ -131,4 +131,16 @@ public class VideoDetail implements Parcelable {
         detail.setType(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Video.COLUMN_TYPE)));
         return detail;
     }
+
+    @Override
+    public String toString() {
+        return "VideoDetail{" +
+                "id='" + id + '\'' +
+                ", videoID='" + videoID + '\'' +
+                ", type='" + type + '\'' +
+                ", name='" + name + '\'' +
+                ", site='" + site + '\'' +
+                ", size=" + size +
+                '}';
+    }
 }

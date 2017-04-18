@@ -180,9 +180,10 @@ public class NetworkUtil {
     public <T extends ResultHandler> void fetchResult(MovieQuery query, Class<T> clazz, MovieRequest.MovieRequestListener<T> listener) {
         if (!checkConnection(mCtx)) {
             listener.onNetworkError();
+            return;
         }
 
-        MovieRequest<T> request = new MovieRequest(mCtx, query, clazz, listener);
+        MovieRequest<T> request = new MovieRequest<>(mCtx, query, clazz, listener);
         request.setTag(query.getClass().getSimpleName());
         addToRequestQueue(request);
     }

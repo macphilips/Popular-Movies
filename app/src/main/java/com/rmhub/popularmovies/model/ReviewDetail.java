@@ -17,18 +17,6 @@ import com.rmhub.popularmovies.provider.Contract;
 
 public class ReviewDetail implements Parcelable {
 
-    public static final Creator<ReviewDetail> CREATOR = new Creator<ReviewDetail>() {
-        @Override
-        public ReviewDetail createFromParcel(Parcel in) {
-            return new ReviewDetail(in);
-        }
-
-        @Override
-        public ReviewDetail[] newArray(int size) {
-            return new ReviewDetail[size];
-        }
-    };
-
     @SerializedName("id")
     @Expose
     private String id;
@@ -42,6 +30,18 @@ public class ReviewDetail implements Parcelable {
     @Expose
     private String reviewURL;
 
+    public static final Creator<ReviewDetail> CREATOR = new Creator<ReviewDetail>() {
+        @Override
+        public ReviewDetail createFromParcel(Parcel in) {
+            return new ReviewDetail(in);
+        }
+
+        @Override
+        public ReviewDetail[] newArray(int size) {
+            return new ReviewDetail[size];
+        }
+    };
+
     protected ReviewDetail(Parcel in) {
         id = in.readString();
         author = in.readString();
@@ -51,15 +51,6 @@ public class ReviewDetail implements Parcelable {
 
     public ReviewDetail() {
 
-    }
-
-    public static ReviewDetail buildFrom(Cursor cursor) {
-        ReviewDetail reviewDetail = new ReviewDetail();
-        reviewDetail.setAuthor(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_AUTHOR)));
-        reviewDetail.setContent(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_CONTENT)));
-        reviewDetail.setId(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_REVIEW_ID)));
-        reviewDetail.setReviewURL(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_REVIEW_URL)));
-        return reviewDetail;
     }
 
     @Override
@@ -73,6 +64,15 @@ public class ReviewDetail implements Parcelable {
     @Override
     public int describeContents() {
         return 0;
+    }
+
+    public static ReviewDetail buildFrom(Cursor cursor) {
+        ReviewDetail reviewDetail = new ReviewDetail();
+        reviewDetail.setAuthor(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_AUTHOR)));
+        reviewDetail.setContent(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_CONTENT)));
+        reviewDetail.setId(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_REVIEW_ID)));
+        reviewDetail.setReviewURL(cursor.getString(cursor.getColumnIndexOrThrow(Contract.Reviews.COLUMN_REVIEW_URL)));
+        return reviewDetail;
     }
 
     public String getContent() {
@@ -107,4 +107,13 @@ public class ReviewDetail implements Parcelable {
         this.author = author;
     }
 
+    @Override
+    public String toString() {
+        return "ReviewDetail{" +
+                "id='" + id + '\'' +
+                ", author='" + author + '\'' +
+                ", content='" + content + '\'' +
+                ", reviewURL='" + reviewURL + '\'' +
+                '}';
+    }
 }

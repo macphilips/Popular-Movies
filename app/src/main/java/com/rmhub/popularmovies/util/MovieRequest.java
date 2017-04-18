@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 public class MovieRequest<T extends ResultHandler> extends Request<T> {
     public static final String QUERY_URL = "url";
     public static final String MOVIE_DETAILS = "movieDetail";
+    private static final String TAG = MovieRequest.class.getSimpleName();
     private final Gson gson = new Gson();
     private final Class<T> clazz;
     private final Response.Listener<T> listener;
@@ -53,6 +54,8 @@ public class MovieRequest<T extends ResultHandler> extends Request<T> {
     protected Response<T> parseNetworkResponse(NetworkResponse response) {
         try {
             String json = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
+            Log.d(TAG,"response => "+json);
+
             T obj = gson.fromJson(json, clazz);
             if (mMovieDetail != null) {
                 obj.saveToDatabase(mCtx, mMovieDetail);

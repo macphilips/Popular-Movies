@@ -105,5 +105,23 @@ public class Review {
         public void setDetails(ArrayList<ReviewDetail> details) {
             this.details = details;
         }
+
+        @Override
+        public String toString() {
+            return "Result{" +
+                    "totalResult=" + totalResult +
+                    ", totalPages=" + totalPages +
+                    ", page=" + page +
+                    ", id=" + id +
+                    ", details=" + details +
+                    '}';
+        }
+
+        @Override
+        public void loadFromDB(Context ctx, MovieDetail detail) {
+            details = ProviderUtil.getReviews(ctx, detail);
+            totalPages = -1;
+            totalResult = details.size();
+        }
     }
 }

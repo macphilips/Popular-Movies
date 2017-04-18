@@ -1,7 +1,6 @@
 package com.rmhub.popularmovies.helper;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,9 +14,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.model.MovieDetail;
-import com.rmhub.popularmovies.model.Video;
 import com.rmhub.popularmovies.model.VideoDetail;
-import com.rmhub.popularmovies.util.MovieRequest;
 import com.rmhub.popularmovies.util.NetworkUtil;
 
 import java.util.ArrayList;
@@ -41,18 +38,6 @@ public class TrailerVideoAdapter extends PagerAdapter {
     public TrailerVideoAdapter(final MovieDetail details, Context context) {
         mCtx = context;
         mInflater = LayoutInflater.from(context);
-
-        Bundle bundle = new Bundle();
-        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieVideos(details, 1));
-        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
-        Video.Query videoQuery = new Video.Query(bundle);
-        NetworkUtil.getInstance(context).fetchResult(videoQuery, Video.Result.class, new MovieRequest.MovieRequestListener<Video.Result>() {
-            @Override
-            public void onResponse(Video.Result result) {
-                super.onResponse(result);
-                addVideoDetail(result.getVideoDetails());
-            }
-        });
     }
 
     @Override
@@ -84,7 +69,7 @@ public class TrailerVideoAdapter extends PagerAdapter {
                 .with(mCtx)
                 .load(NetworkUtil.buildYoutubeVideoThumbnailURL(videoDetails.get(position).getVideoID()))
                 .fitCenter()
-                .placeholder(R.drawable.post_background)
+                .placeholder(R.drawable.empty_photo)
                 .crossFade().listener(new RequestListener<String, GlideDrawable>() {
             @Override
             public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {

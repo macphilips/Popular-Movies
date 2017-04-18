@@ -135,7 +135,7 @@ public final class Contract {
                 COLUMN_PLOT
         );*/
 
-        public static Uri makeWithID(int id) {
+        public static Uri makeUriWithID(int id) {
             return URI.buildUpon().appendPath(String.valueOf(id)).build();
         }
 

@@ -6,12 +6,13 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.helper.ReviewAdapter;
 import com.rmhub.popularmovies.model.ReviewDetail;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -25,6 +26,8 @@ import butterknife.ButterKnife;
 
 public class ReviewActivity extends AppCompatActivity {
     public static final String REVIEW_LIST = "review_list";
+    public static final String COLOR = "color";
+    private static final String TAG = ReviewActivity.class.getSimpleName();
     @BindView(R.id.toolbar)
     Toolbar mToolbar;
 
@@ -37,10 +40,16 @@ public class ReviewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(mToolbar);
-        List<ReviewDetail> details = getIntent().getParcelableArrayListExtra(REVIEW_LIST);
+        mRecyclerView.setBackgroundColor(getResources().getColor(R.color.app_grey));
+        ArrayList<ReviewDetail> details = getIntent().getBundleExtra(REVIEW_LIST).getParcelableArrayList(REVIEW_LIST);
+        if (details != null) {
+            for (ReviewDetail detail : details) {
+                Log.d(TAG, String.valueOf(detail));
+            }
+        }
         ReviewAdapter adapter = new ReviewAdapter(this);
-        adapter.addReviewList(details);
         mRecyclerView.setAdapter(adapter);
+        adapter.addReviewList(details);
 
     }
 }

@@ -12,17 +12,16 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
-import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,13 +41,16 @@ import com.rd.Orientation;
 import com.rd.PageIndicatorView;
 import com.rmhub.popularmovies.CustomImageView;
 import com.rmhub.popularmovies.R;
+import com.rmhub.popularmovies.helper.MovieLoader;
 import com.rmhub.popularmovies.helper.MoviesAdapter;
+import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.helper.ReviewAdapter;
 import com.rmhub.popularmovies.helper.TrailerVideoAdapter;
 import com.rmhub.popularmovies.model.MovieDetail;
 import com.rmhub.popularmovies.model.Movies;
 import com.rmhub.popularmovies.model.Review;
 import com.rmhub.popularmovies.model.ReviewDetail;
+import com.rmhub.popularmovies.model.Video;
 import com.rmhub.popularmovies.model.VideoDetail;
 import com.rmhub.popularmovies.util.MovieRequest;
 import com.rmhub.popularmovies.util.NetworkUtil;
@@ -65,11 +67,14 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MovieDetailsActivity extends AppCompatActivity {
+public class MovieDetailsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ResultHandler> {
 
     public static final String MOVIES_DETAILS = "details";
     private static final String IMAGE_CACHE_DIR = "thumbnails";
     private static final String TAG = MovieDetailsActivity.class.getSimpleName();
+    private static final int REVIEW_LOADER = 100;
+    private static final int VIDEO_LOADER = 200;
+    private static final int RECOMMENDATION_LOADER = 300;
 
     @BindView(R.id.toolbar)
     Toolbar toolbar;
@@ -84,7 +89,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     @BindView(R.id.movie_poster)
     CustomImageView moviePoster;
-
     @BindView(R.id.overview_bg)
     View overviewBg;
     @BindView(R.id.rv_recommendation)
@@ -112,52 +116,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
         }
     };
     private MovieDetail details;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_movie_details);
-        ButterKnife.bind(this);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        readMoreButton = new Button(this);
-
-        details = getIntent().getParcelableExtra(MOVIES_DETAILS);
-        markedAsFav = details.getFavorite();
-        setupView(details);
-        setupShapeDrawable();
-        int posterWidth = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
-        Glide
-                .with(this)
-                .load(details.getPoster_path())
-                .asBitmap()
-                //  .override(posterWidth, (int) (( 1.5) * posterWidth))
-                .fitCenter()
-                .placeholder(R.drawable.post_background).listener(new RequestListener<String, Bitmap>() {
-            @Override
-            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-                return false;
-            }
-
-            @Override
-            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target,
-                                           boolean isFromMemoryCache, boolean isFirstResource) {
-                createPaletteAsync(resource, null);
-                return false;
-            }
-        })
-                .into(moviePoster);
-
-        getReviews(details);
-
-
-        setupRecommendationAdapter(details);
-
-
-        setupTrailerVideoAdapter(details);
-    }
+    private TrailerVideoAdapter trailerVideoAdapter;
+    private MoviesAdapter mAdapter;
 
     public static void makeTextViewResizable(final TextView tv, final int maxLine, final String expandText, final boolean viewMore) {
 
@@ -181,7 +141,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, maxLine, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, maxLine, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 } else if (maxLine > 0 && tv.getLineCount() >= maxLine) {
                     int lineEndIndex = tv.getLayout().getLineEnd(maxLine - 1);
@@ -189,7 +149,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, maxLine, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, maxLine, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 } else {
                     int lineEndIndex = tv.getLayout().getLineEnd(tv.getLayout().getLineCount() - 1);
@@ -197,11 +157,39 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable(Html.fromHtml(tv.getText().toString()), tv, lineEndIndex, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, lineEndIndex, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 }
             }
         });
+
+    }
+
+    private static SpannableStringBuilder addClickablePartTextViewResizable(final String str, final TextView tv,
+                                                                            final int maxLine, final String spannableText, final boolean viewMore) {
+        SpannableStringBuilder ssb = new SpannableStringBuilder(str);
+
+        if (str.contains(spannableText)) {
+
+            ssb.setSpan(new MySpanable(false) {
+                @Override
+                public void onClick(View widget) {
+                    if (viewMore) {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, -1, "View Less", false);
+                    } else {
+                        tv.setLayoutParams(tv.getLayoutParams());
+                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
+                        tv.invalidate();
+                        makeTextViewResizable(tv, 3, "View More", true);
+                    }
+                }
+            }, str.indexOf(spannableText), str.indexOf(spannableText) + spannableText.length(), 0);
+
+        }
+        return ssb;
 
     }
 
@@ -224,7 +212,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
             @Override
             public void onNetworkError() {
-                super.onNetworkError();
+                startLoader(REVIEW_LOADER);
             }
         });
     }
@@ -242,96 +230,69 @@ public class MovieDetailsActivity extends AppCompatActivity {
         opt.radius = getResources().getDimensionPixelSize(R.dimen.cardview_default_radius);
 
         mRvRecommendation.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        MoviesAdapter mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
+
+        mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
         mAdapter.setOnItemClickCallBack(mItemClickCallback);
         mAdapter.loadMovie(recommendationQuery);
-    }
+        mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
+            @Override
+            public void success() {
+            }
 
-    private static SpannableStringBuilder addClickablePartTextViewResizable(final Spanned strSpanned, final TextView tv,
-                                                                            final int maxLine, final String spanableText, final boolean viewMore) {
-        String str = strSpanned.toString();
-        SpannableStringBuilder ssb = new SpannableStringBuilder(strSpanned);
-
-        if (str.contains(spanableText)) {
-            ssb.setSpan(new ClickableSpan() {
-
-                @Override
-                public void onClick(View widget) {
-
-                    if (viewMore) {
-                        tv.setLayoutParams(tv.getLayoutParams());
-                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
-                        tv.invalidate();
-                        makeTextViewResizable(tv, -1, "View Less", false);
-                    } else {
-                        tv.setLayoutParams(tv.getLayoutParams());
-                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
-                        tv.invalidate();
-                        makeTextViewResizable(tv, 3, "View More", true);
-                    }
-
+            @Override
+            public void failed(String message) {
+                if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
+                    startLoader(RECOMMENDATION_LOADER);
                 }
-            }, str.indexOf(spanableText), str.indexOf(spanableText) + spanableText.length(), 0);
-
-        }
-        return ssb;
-
+            }
+        });
     }
 
-    private static SpannableStringBuilder addClickablePartTextViewResizables(final Spanned strSpanned, final TextView tv,
-                                                                             final int maxLine, final String spanableText, final boolean viewMore) {
-        String str = strSpanned.toString();
-        SpannableStringBuilder ssb = new SpannableStringBuilder(strSpanned);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-        if (str.contains(spanableText)) {
+        setContentView(R.layout.activity_movie_details);
+        ButterKnife.bind(this);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        readMoreButton = new Button(this);
+
+        details = getIntent().getParcelableExtra(MOVIES_DETAILS);
+        Log.d(TAG,String.valueOf(details));
+        markedAsFav = details.getFavorite();
+        setupView(details);
+        setupShapeDrawable();
+      //  int posterWidth = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
+        Glide
+                .with(this)
+                .load(details.getPosterURL())
+                .asBitmap()
+                //  .override(posterWidth, (int) (( 1.5) * posterWidth))
+                .fitCenter()
+                .placeholder(R.drawable.empty_photo).listener(new RequestListener<String, Bitmap>() {
+            @Override
+            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                return false;
+            }
+
+            @Override
+            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target,
+                                           boolean isFromMemoryCache, boolean isFirstResource) {
+                createPaletteAsync(resource, null);
+                return false;
+            }
+        })
+                .into(moviePoster);
+
+        getReviews(details);
 
 
-            ssb.setSpan(new MySpanable(false) {
-                @Override
-                public void onClick(View widget) {
-                    if (viewMore) {
-                        tv.setLayoutParams(tv.getLayoutParams());
-                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
-                        tv.invalidate();
-                        makeTextViewResizable(tv, -1, "View Less", false);
-                    } else {
-                        tv.setLayoutParams(tv.getLayoutParams());
-                        tv.setText(tv.getTag().toString(), TextView.BufferType.SPANNABLE);
-                        tv.invalidate();
-                        makeTextViewResizable(tv, 3, "View More", true);
-                    }
-                }
-            }, str.indexOf(spanableText), str.indexOf(spanableText) + spanableText.length(), 0);
+        setupRecommendationAdapter(details);
 
-        }
-        return ssb;
 
-    }
-
-    private void setupShapeDrawable() {
-        int height = overviewBg.getHeight();
-        int width = overviewBg.getWidth();
-
-        RectShape rect = new RectShape();
-        rect.resize(width, height);
-
-        shapeDrawable = new ShapeDrawable(rect);
-
-        int[] colors = {getResources().getColor(R.color.overlay_start), getResources().getColor(R.color.overlay_end)};
-
-        grad = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, colors);
-        grad.setGradientType(GradientDrawable.LINEAR_GRADIENT);
-        grad.setShape(GradientDrawable.RECTANGLE);
-        grad.setSize(width, height);
-
-        Drawable[] layers = {shapeDrawable, grad};
-        LayerDrawable bg = new LayerDrawable(layers);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            overviewBg.setBackground(bg);
-        } else {
-            overviewBg.setBackgroundDrawable(bg);
-        }
+        setupTrailerVideoAdapter(details);
     }
 
     private void setupView(MovieDetail details) {
@@ -384,18 +345,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
         markAsFavButton.setText(text);
     }
 
-    public Palette.Swatch getDominantColor(Palette bitmap) {
-        List<Palette.Swatch> swatchesTemp = (bitmap).getSwatches();
-        List<Palette.Swatch> swatches = new ArrayList<Palette.Swatch>(swatchesTemp);
-        Collections.sort(swatches, new Comparator<Palette.Swatch>() {
-            @Override
-            public int compare(Palette.Swatch swatch1, Palette.Swatch swatch2) {
-                return swatch2.getPopulation() - swatch1.getPopulation();
-            }
-        });
-        return swatches.size() > 0 ? swatches.get(0) : null;
-    }
-
     private void setupReviewLayout(final ArrayList<ReviewDetail> details) {
         if (details.isEmpty()) {
             mReview.setVisibility(View.GONE);
@@ -407,23 +356,23 @@ public class MovieDetailsActivity extends AppCompatActivity {
             View v = getLayoutInflater().inflate(R.layout.review_item, null);
             v.setLayoutParams(params);
             params.setMargins(30, 10, 30, 10);
-
-
             ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
-            ((TextView) v.findViewById(R.id.review)).setText(details.get(i).getContent());
+            TextView review = (TextView) v.findViewById(R.id.review);
+            review.setText(details.get(i).getContent());
+            makeTextViewResizable(review, 5, "more", true);
             String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
-
             TextDrawable drawable1 = TextDrawable.builder()
                     .beginConfig()
                     .bold()
-                    .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
+                   // .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
                     .endConfig()
                     .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
 
+            View avatar = v.findViewById(R.id.review_avatar);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                (v.findViewById(R.id.review_avatar)).setBackground(drawable1);
+                avatar.setBackground(drawable1);
             } else {
-                (v.findViewById(R.id.review_avatar)).setBackgroundDrawable(drawable1);
+                avatar.setBackgroundDrawable(drawable1);
             }
             mRvReview.addView(v);
             if (i >= 0 && i < n - 1 && n != 1) {
@@ -443,8 +392,10 @@ public class MovieDetailsActivity extends AppCompatActivity {
             readMoreButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent i = new Intent();
-                    i.putParcelableArrayListExtra(ReviewActivity.REVIEW_LIST, details);
+                    Intent i = new Intent(MovieDetailsActivity.this, ReviewActivity.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelableArrayList(ReviewActivity.REVIEW_LIST, details);
+                    i.putExtra(ReviewActivity.REVIEW_LIST, bundle);
                     startActivity(i);
                 }
             });
@@ -465,15 +416,32 @@ public class MovieDetailsActivity extends AppCompatActivity {
     }
 
     private void setupTrailerVideoAdapter(MovieDetail details) {
-        TrailerVideoAdapter adapter = new TrailerVideoAdapter(details, this);
-        adapter.setPlayListener(new View.OnClickListener() {
+
+        trailerVideoAdapter = new TrailerVideoAdapter(details, this);
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieVideos(details, 1));
+        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
+        Video.Query videoQuery = new Video.Query(bundle);
+        NetworkUtil.getInstance(this).fetchResult(videoQuery, Video.Result.class, new MovieRequest.MovieRequestListener<Video.Result>() {
+            @Override
+            public void onResponse(Video.Result result) {
+                super.onResponse(result);
+                trailerVideoAdapter.addVideoDetail(result.getVideoDetails());
+            }
+
+            @Override
+            public void onNetworkError() {
+                startLoader(VIDEO_LOADER);
+            }
+        });
+        trailerVideoAdapter.setPlayListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(NetworkUtil.buildYoutubeVideoURL((VideoDetail) v.getTag()))));
 
             }
         });
-        adapter.setShareListener(new View.OnClickListener() {
+        trailerVideoAdapter.setShareListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //     Object tag = v.getTag();
@@ -484,10 +452,36 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.send_to)));
             }
         });
-        mPager.setAdapter(adapter);
+        mPager.setAdapter(trailerVideoAdapter);
         indicatorView = (PageIndicatorView) findViewById(R.id.pageindicatorview);
         indicatorView.setViewPager(mPager);
         indicatorView.setOrientation(Orientation.HORIZONTAL);
+    }
+
+    private void setupShapeDrawable() {
+        int height = overviewBg.getHeight();
+        int width = overviewBg.getWidth();
+
+        RectShape rect = new RectShape();
+        rect.resize(width, height);
+
+        shapeDrawable = new ShapeDrawable(rect);
+
+        int[] colors = {getResources().getColor(R.color.overlay_start), getResources().getColor(R.color.overlay_end)};
+
+        grad = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, colors);
+        grad.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        grad.setShape(GradientDrawable.RECTANGLE);
+        grad.setSize(width, height);
+
+        Drawable[] layers = {shapeDrawable, grad};
+        LayerDrawable bg = new LayerDrawable(layers);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            overviewBg.setBackground(bg);
+        } else {
+            overviewBg.setBackgroundDrawable(bg);
+        }
     }
 
     public void createPaletteAsync(Bitmap bitmap, final MovieDetail details) {
@@ -518,6 +512,18 @@ public class MovieDetailsActivity extends AppCompatActivity {
         });
     }
 
+    public Palette.Swatch getDominantColor(Palette bitmap) {
+        List<Palette.Swatch> swatchesTemp = (bitmap).getSwatches();
+        List<Palette.Swatch> swatches = new ArrayList<Palette.Swatch>(swatchesTemp);
+        Collections.sort(swatches, new Comparator<Palette.Swatch>() {
+            @Override
+            public int compare(Palette.Swatch swatch1, Palette.Swatch swatch2) {
+                return swatch2.getPopulation() - swatch1.getPopulation();
+            }
+        });
+        return swatches.size() > 0 ? swatches.get(0) : null;
+    }
+
     @OnClick(R.id.mark_as_favorite)
     synchronized void markAsFavClicked() {
         if (details != null) {
@@ -532,6 +538,48 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 }
             }.execute(markedAsFav);
             setMarkAsFavBackground();
+        }
+    }
+
+    @Override
+    public Loader<ResultHandler> onCreateLoader(int id, Bundle args) {
+
+        if (id == RECOMMENDATION_LOADER) {
+            new MovieLoader<>(this, Movies.Result.class, details);
+        } else if (id == REVIEW_LOADER) {
+            new MovieLoader<>(this, Review.Result.class, details);
+        } else if (id == VIDEO_LOADER) {
+            new MovieLoader<>(this, Video.Result.class, details);
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<ResultHandler> loader, ResultHandler data) {
+        if (data != null) {
+            Log.d(TAG,"onLoadFinished data instanceof "+data.getClass().getSimpleName());
+            if (data instanceof Video.Result) {
+                trailerVideoAdapter.addVideoDetail(((Video.Result) data).getVideoDetails());
+            } else if (data instanceof Review.Result) {
+                setupReviewLayout(((Review.Result) data).getDetails());
+            } else if (data instanceof Movies.Result) {
+                mAdapter.loadOfflineData(((Movies.Result) data));
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<ResultHandler> loader) {
+
+    }
+
+    void startLoader(int id) {
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<ResultHandler> loader = loaderManager.getLoader(id);
+        if (loader == null) {
+            loaderManager.initLoader(id, null, this);
+        } else {
+            loaderManager.restartLoader(id, null, this);
         }
     }
 }

@@ -42,7 +42,7 @@ class DbHelper extends SQLiteOpenHelper {
                 + ");";
 
         String video_table = "CREATE TABLE " + Contract.VIDEOS + " ("
-                + Contract.Reviews._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + Contract.Video._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + Contract.Video.COLUMN_VIDEO_ID + " TEXT NOT NULL, "
                 + Contract.Video.COLUMN_SITE + " TEXT NOT NULL, "
                 + Contract.Video.COLUMN_NAME + " TEXT NOT NULL, "

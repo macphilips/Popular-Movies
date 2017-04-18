@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void failed(String message) {
-                hideIndicator();
                 if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
                     LoaderManager loaderManager = getSupportLoaderManager();
                     Loader<ResultHandler> loader = loaderManager.getLoader(MOVIE_LOADER);
@@ -92,12 +91,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     showSnackMessage(message);
                 } else {
+                    hideIndicator();
                     ErrorDialog.show(message, getSupportFragmentManager());
                 }
             }
         });
 
-      //  getSupportLoaderManager().initLoader(MOVIE_LOADER, null, MainActivity.this);
         showIndicator();
         mAdapter.loadMovie();
     }
@@ -182,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (tag != null && tag instanceof MovieDetail) {
             Intent i = new Intent(this, MovieDetailsActivity.class);
             i.putExtra(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetail) tag);
+
             if (Utils.hasJellyBean()) {
                 ActivityOptionsCompat options = ActivityOptionsCompat.
                         makeSceneTransitionAnimation(this, v,
@@ -208,12 +208,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public Loader<ResultHandler> onCreateLoader(int id, Bundle args) {
 
-        return new MovieLoader(this);
+        return new MovieLoader(this,Movies.Result.class);
     }
 
     @Override
     public void onLoadFinished(Loader<ResultHandler> loader, ResultHandler data) {
+        Log.e(TAG,"onLoadFinished");
+        hideIndicator();
         if (data != null) {
+            Log.e(TAG,"dATA NOT NULL");
             mAdapter.loadOfflineData((Movies.Result) data);
         }
     }

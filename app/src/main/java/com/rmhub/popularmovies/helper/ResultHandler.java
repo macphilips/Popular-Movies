@@ -17,4 +17,12 @@ public abstract class ResultHandler {
     public void saveToDatabase(Context context) {
     }
     public void saveToDatabase(Context context, MovieDetail moveID){}
+
+    public void loadFromDB(Context context) {
+
+    }
+
+    public void loadFromDB(Context context, MovieDetail moveID) {
+
+    }
 }
