@@ -5,7 +5,6 @@ import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +35,7 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewHold
     private final Context context;
     private List<ReviewDetail> details = new ArrayList<>();
 
-    public ReviewAdapter(AppCompatActivity context) {
+    public ReviewAdapter(Context context) {
         this.context = context;
     }
 
@@ -115,23 +114,22 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewHold
         view.setTextColor(list);
     }
 
-
     public void addReviewList(List<ReviewDetail> details) {
         if (details == null || details.isEmpty()) {
             return;
         }
-        this.details.clear();
+        if (!this.details.isEmpty()) {
+            this.details.clear();
+        }
         this.details.addAll(details);
+        notifyItemChanged(details.size() - 1);
         notifyDataSetChanged();
     }
 
 
     @Override
     public ReviewAdapter.ReviewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         return new ReviewAdapter.ReviewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.review_item, parent, false));
-
-
     }
 
     @Override
@@ -139,20 +137,18 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewHold
         ReviewDetail tag = details.get(position);
         holder.reviewer_name.setText(tag.getAuthor());
         holder.review.setText(tag.getContent());
-            String firstLetter = tag.getAuthor().substring(0, 1).toUpperCase();
-
-            TextDrawable drawable1 = TextDrawable.builder()
+        String firstLetter = tag.getAuthor().substring(0, 1).toUpperCase();
+        TextDrawable drawable1 = TextDrawable.builder()
                     .beginConfig()
                     .bold()
                     .withBorder(context.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
                     .endConfig()
                     .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(tag.getAuthor()), context.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                holder.avatar.setBackground(drawable1);
-            } else {
-                holder.avatar.setBackgroundDrawable(drawable1);
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            holder.avatar.setBackground(drawable1);
+        } else {
+            holder.avatar.setBackgroundDrawable(drawable1);
+        }
 
     }
 

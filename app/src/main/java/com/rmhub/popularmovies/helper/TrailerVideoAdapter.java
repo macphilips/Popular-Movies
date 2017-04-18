@@ -81,6 +81,7 @@ public class TrailerVideoAdapter extends PagerAdapter {
             @Override
             public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
                 progressBar.setVisibility(View.GONE);
+                playButton.setVisibility(View.VISIBLE);
                 return false;
             }
         })

@@ -33,9 +33,8 @@ class DbHelper extends SQLiteOpenHelper {
                 ");";
 
         String review_table = "CREATE TABLE " + Contract.REVIEWS + " ("
-                + Contract.Reviews._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + Contract.Reviews.COLUMN_CONTENT + " TEXT NOT NULL, "
-                + Contract.Reviews.COLUMN_REVIEW_ID + " TEXT NOT NULL, "
+                + Contract.Reviews.COLUMN_REVIEW_ID + " PRIMARY KEY NOT NULL, "
                 + Contract.Reviews.COLUMN_REVIEW_URL + " TEXT NOT NULL, "
                 + Contract.Reviews.COLUMN_MOVIE_ID + " INTEGER references " + Contract.MOVIES + " (" + Contract.Movies.COLUMN_MOVIE_ID + "), "
                 + Contract.Reviews.COLUMN_AUTHOR + " TEXT NOT NULL "
@@ -48,31 +47,26 @@ class DbHelper extends SQLiteOpenHelper {
                 + Contract.Video.COLUMN_NAME + " TEXT NOT NULL, "
                 + Contract.Video.COLUMN_SIZE + " INTEGER NOT NULL, "
                 + Contract.Video.COLUMN_MOVIE_ID + " INTEGER references " + Contract.MOVIES + " (" + Contract.Movies.COLUMN_MOVIE_ID + "), "
-                + Contract.Video.COLUMN_TYPE + " TEXT NOT NULL "
+                + Contract.Video.COLUMN_TYPE + " TEXT NOT NULL, "
+                + "UNIQUE (" + Contract.Video.COLUMN_VIDEO_ID + "," + Contract.Video.COLUMN_MOVIE_ID + ") ON CONFLICT REPLACE"
                 + ");";
 
 
         String recommendation_table = "CREATE TABLE " + Contract.RECOMMENDATION + " ("
-                + Contract.Recommendation._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + Contract.Recommendation.COLUMN_RECOMMENDED_ID + " INTEGER NOT NULL, "
+                + Contract.Recommendation.COLUMN_RECOMMENDED_ID + " INTEGER PRIMARY KEY NOT NULL, "
                 + Contract.Recommendation.COLUMN_MOVIE_ID + " INTEGER references " + Contract.MOVIES + " (" + Contract.Movies.COLUMN_MOVIE_ID + "), "
                 + "UNIQUE (" + Contract.Recommendation.COLUMN_RECOMMENDED_ID + "," + Contract.Recommendation.COLUMN_MOVIE_ID + ") ON CONFLICT REPLACE);";
-
 
         db.execSQL(movie_table);
         db.execSQL(review_table);
         db.execSQL(recommendation_table);
         db.execSQL(video_table);
-
-        Log.v(getClass().getSimpleName(),"onCreate database");
-
     }
 
     @Override
     public void onOpen(SQLiteDatabase db) {
         super.onOpen(db);
         if (!db.isReadOnly()) {
-            Log.v(getClass().getSimpleName(),"Foreign key contraints enabled");
             db.execSQL("PRAGMA foreign_keys = ON;");
         }
     }

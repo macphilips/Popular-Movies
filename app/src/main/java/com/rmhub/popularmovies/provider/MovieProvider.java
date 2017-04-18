@@ -9,7 +9,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.util.Set;
 
@@ -235,7 +234,6 @@ public class MovieProvider extends ContentProvider {
                         selectionArgs
                 );
 
-                Log.i(MovieProvider.class.getSimpleName(), "Updated favorite ");
                 break;
 
             default:
@@ -259,11 +257,10 @@ public class MovieProvider extends ContentProvider {
         switch (uriMatcher.match(uri)) {
             case MOVIES:
                 returnCount = 0;
-                Log.v(getClass().getSimpleName(), "inserting movies in bulk to database");
                 db.beginTransaction();
                 try {
                     for (ContentValues value : values) {
-                        long valueReturned = db.replace(
+                        long valueReturned = db.insert(
                                 Contract.MOVIES,
                                 null,
                                 value
@@ -280,8 +277,6 @@ public class MovieProvider extends ContentProvider {
                     context.getContentResolver().notifyChange(uri, null);
                 }
 
-                Log.v(getClass().getSimpleName(), "");
-                Log.v(getClass().getSimpleName(), returnCount + " movies inserted");
 
                 return returnCount;
             case RECOMMENDATION:

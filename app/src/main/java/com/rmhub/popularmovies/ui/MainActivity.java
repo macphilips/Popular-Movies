@@ -12,7 +12,6 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,7 +29,6 @@ import java.util.concurrent.Callable;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 import rx.Single;
 import rx.SingleSubscriber;
 import rx.Subscription;
@@ -52,15 +50,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.rv_movie_list)
     RecyclerView mRecyclerView;
 
+    @BindView(R.id.empty_view_container)
+    View emptyView;
+
     private MoviesAdapter mAdapter;
     private boolean showingIndicator;
 
-
-    @OnClick(R.id.refresh_button)
     void refresh() {
-        hideReloadButton();
         mAdapter.loadMovie();
-
     }
 
 
@@ -72,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return result;
         }
     });
+    private Subscription mMoviesSubscription = null;
     Single<Movies.Result> favoriteMoviesObservable = Single.fromCallable(new Callable<Movies.Result>() {
         @Override
         public Movies.Result call() {
@@ -80,13 +78,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return result;
         }
     });
-    private Subscription mMoviesSubscription = null;
     private Subscription mFavoriteMoviesSubscription = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.v(TAG, "onCreate");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
         }
@@ -95,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setSupportActionBar(mToolbar);
         MoviesAdapter.Options opt = new MoviesAdapter.Options();
         opt.roughItemWidthSize = getResources().getDimensionPixelSize(R.dimen.poster_column_size);
+        opt.emptyView = emptyView;
         mRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         mAdapter = new MoviesAdapter(this, mRecyclerView, opt);
         mAdapter.setOnItemClickCallBack(this);
@@ -107,26 +104,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onError(String message) {
                 if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
-               /*     LoaderManager loaderManager = getSupportLoaderManager();
-                    Loader<ResultHandler> loader = loaderManager.getLoader(MOVIE_LOADER);
-                    if (loader == null) {
-                        loaderManager.initLoader(MOVIE_LOADER, null, MainActivity.this);
-                    } else {
-                        loaderManager.restartLoader(MOVIE_LOADER, null, MainActivity.this);
-                    }*/
                     loadMoviesFromDB();
                     showSnackMessage(message);
+
                 } else {
                     hideIndicator();
                     ErrorDialog.show(message, getSupportFragmentManager());
+
                 }
             }
         });
         showIndicator();
         if (savedInstanceState == null) {
             mAdapter.loadMovie();
-        }else {
-            Log.d(TAG,"savedInstanceState not null");
         }
     }
 
@@ -198,14 +188,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-
-        Log.v(TAG, "onResume Called");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.v(TAG, "onPause");
     }
 
     private void showIndicator() {
@@ -218,16 +205,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mLoadingIndicator.setVisibility(View.GONE);
             showingIndicator = false;
         }
-    }
-
-    private void showReloadButton() {
-        findViewById(R.id.error_container).setVisibility(View.VISIBLE);
-        //  showingIndicator = true;
-    }
-
-    private void hideReloadButton() {
-        findViewById(R.id.error_container).setVisibility(View.GONE);
-        ///  showingIndicator = false;
     }
 
     @Override
@@ -272,8 +249,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Object tag = v.getTag();
         if (tag != null && tag instanceof MovieDetail) {
             Intent i = new Intent(this, MovieDetailsActivity.class);
-            i.putExtra(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetail) tag);
-
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(MovieDetailsActivity.MOVIES_DETAILS, (MovieDetail) tag);
+            i.putExtra(MovieDetailsActivity.MOVIES_BUNDLE, bundle);
             if (Utils.hasJellyBean()) {
                 ActivityOptionsCompat options = ActivityOptionsCompat.
                         makeSceneTransitionAnimation(this, v,
@@ -288,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Log.d(TAG,"onSaveInstanceState");
+
         mAdapter.onSaveInstanceState(outState);
     }
 
@@ -296,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mAdapter.onRestoreInstanceState(savedInstanceState);
-        Log.d(TAG,"onRestoreInstanceState");
+
     }
 
     private void showLabelsPopup() {

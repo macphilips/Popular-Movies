@@ -26,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.amulyakhare.textdrawable.TextDrawable;
@@ -72,6 +73,7 @@ import rx.schedulers.Schedulers;
 public class MovieDetailsActivity extends AppCompatActivity {
 
     public static final String MOVIES_DETAILS = "details";
+    public static final String MOVIES_BUNDLE = "bundle";
     private static final String TAG = MovieDetailsActivity.class.getSimpleName();
 
     @BindView(R.id.toolbar)
@@ -101,6 +103,13 @@ public class MovieDetailsActivity extends AppCompatActivity {
     @BindView(R.id.mark_as_favorite)
     Button markAsFavButton;
 
+    @BindView(R.id.recommendation_progress_bar)
+    ProgressBar recommendation_progress_bar;
+    @BindView(R.id.review_progress_bar)
+    ProgressBar review_progress_bar;
+    @BindView(R.id.empty_view_container)
+    View emptyView;
+
     private boolean markedAsFav;
     private Button readMoreButton;
     private GradientDrawable grad;
@@ -108,6 +117,16 @@ public class MovieDetailsActivity extends AppCompatActivity {
     private MovieDetail details;
     private TrailerVideoAdapter trailerVideoAdapter;
     private MoviesAdapter mAdapter;
+
+    Single<Movies.Result> mRecommendationObservable = Single.fromCallable(new Callable<Movies.Result>() {
+        @Override
+        public Movies.Result call() {
+            Log.d(TAG,"Load recommendation from DB");
+            Movies.Result result = new Movies.Result();
+            result.loadFromDB(MovieDetailsActivity.this,details);
+            return result;
+        }
+    });
 
     private View.OnClickListener mItemClickCallback = new View.OnClickListener() {
         @Override
@@ -131,21 +150,14 @@ public class MovieDetailsActivity extends AppCompatActivity {
             return result;
         }
     });
-    private Single<Movies.Result> mRecommendationObservable = Single.fromCallable(new Callable<Movies.Result>() {
-        @Override
-        public Movies.Result call() {
-            Movies.Result result = new Movies.Result();
-            result.loadFromDB(MovieDetailsActivity.this, details);
-            return result;
-        }
-    });
+
     private Subscription mReviewSubscription = null;
     private Subscription mVideoSubscription = null;
-    private Subscription mRecommendationsSubscription = null;
+
     private Subscription mMarkedAsFavSubscription = null;
 
     private static SpannableStringBuilder addClickablePartTextViewResizable(final String str, final TextView tv,
-                                                                            final int maxLine, final String spannableText, final boolean viewMore) {
+                                                                            final String spannableText, final boolean viewMore) {
         SpannableStringBuilder ssb = new SpannableStringBuilder(str);
 
         if (str.contains(spannableText)) {
@@ -172,6 +184,9 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     }
 
+
+    private Subscription mRecommendationSubscription = null;
+
     public static void makeTextViewResizable(final TextView tv, final int maxLine, final String expandText, final boolean viewMore) {
 
         if (tv.getTag() == null) {
@@ -190,11 +205,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 }
                 if (maxLine == 0) {
                     int lineEndIndex = tv.getLayout().getLineEnd(0);
-                    String text = tv.getText().subSequence(0, lineEndIndex - expandText.length() + 1) + " " + expandText;
+                    String text = tv.getText().subSequence(0, lineEndIndex - 4 - expandText.length() + 1) + "...." + expandText;
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable((tv.getText().toString()), tv, maxLine, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 } else if (maxLine > 0 && tv.getLineCount() >= maxLine) {
                     int lineEndIndex = tv.getLayout().getLineEnd(maxLine - 1);
@@ -202,7 +217,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable((tv.getText().toString()), tv, maxLine, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 } else {
                     int lineEndIndex = tv.getLayout().getLineEnd(tv.getLayout().getLineCount() - 1);
@@ -210,7 +225,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     tv.setText(text);
                     tv.setMovementMethod(LinkMovementMethod.getInstance());
                     tv.setText(
-                            addClickablePartTextViewResizable((tv.getText().toString()), tv, lineEndIndex, expandText,
+                            addClickablePartTextViewResizable((tv.getText().toString()), tv, expandText,
                                     viewMore), TextView.BufferType.SPANNABLE);
                 }
             }
@@ -218,50 +233,12 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     }
 
+    private void hideReviewProgressBar() {
+        review_progress_bar.setVisibility(View.GONE);
+    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_movie_details);
-        ButterKnife.bind(this);
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        readMoreButton = new Button(this);
-
-        details = getIntent().getParcelableExtra(MOVIES_DETAILS);
-        Log.d(TAG,String.valueOf(details));
-        markedAsFavorite();
-        setupView(details);
-        setupShapeDrawable();
-        Glide
-                .with(this)
-                .load(details.getPosterURL())
-                .asBitmap()
-                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                .fitCenter()
-                .placeholder(R.drawable.empty_photo).listener(new RequestListener<String, Bitmap>() {
-            @Override
-            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-                return false;
-            }
-
-            @Override
-            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target,
-                                           boolean isFromMemoryCache, boolean isFirstResource) {
-                createPaletteAsync(resource);
-                return false;
-            }
-        })
-                .into(moviePoster);
-
-        setupReview(details);
-
-
-        setupRecommendationAdapter(details);
-
-
-        setupTrailerVideoAdapter(details);
+    private void showReviewProgressBar() {
+        review_progress_bar.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -278,93 +255,18 @@ public class MovieDetailsActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unSubscribeRecommendations();
+        unSubscribeMovies();
         unSubscribeReview();
         unSubscribeVideos();
         unSubscribeMarkedAsFav();
     }
 
-    private void setupReview(MovieDetail details) {
-        Bundle bundle = new Bundle();
-        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieReviewURL(details, 1));
-        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
-        Review.Query reviewQuery = new Review.Query(bundle);
-        NetworkUtil.getInstance(this).fetchResult(reviewQuery, Review.Result.class, new MovieRequest.MovieRequestListener<Review.Result>() {
-            @Override
-            public void onResponse(Review.Result response) {
-                super.onResponse(response);
-                setupReviewLayout(response.getDetails());
-            }
-
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                super.onErrorResponse(error);
-            }
-
-            @Override
-            public void onNetworkError() {
-                loadReviewFromDB();
-            }
-        });
+    private void showRecommendationProgressBar() {
+        recommendation_progress_bar.setVisibility(View.VISIBLE);
     }
 
-    private void setupReviewLayout(final ArrayList<ReviewDetail> details) {
-        if (details.isEmpty()) {
-            mReview.setVisibility(View.GONE);
-        }
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources().getDimensionPixelSize(R.dimen.divider));
-        int n = Math.min(details.size(), 3);
-        for (int i = 0; i < n; i++) {
-            View v = getLayoutInflater().inflate(R.layout.review_item, null);
-            v.setLayoutParams(params);
-            params.setMargins(30, 10, 30, 10);
-            ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
-            TextView review = (TextView) v.findViewById(R.id.review);
-            review.setText(details.get(i).getContent());
-            makeTextViewResizable(review, 5, "more", true);
-            String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
-            TextDrawable drawable1 = TextDrawable.builder()
-                    .beginConfig()
-                    .bold()
-                   // .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
-                    .endConfig()
-                    .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
-
-            View avatar = v.findViewById(R.id.review_avatar);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                avatar.setBackground(drawable1);
-            } else {
-                avatar.setBackgroundDrawable(drawable1);
-            }
-            mRvReview.addView(v);
-            if (i >= 0 && i < n - 1 && n != 1) {
-                View divider = new View(this);
-                divider.setLayoutParams(dividerParams);
-                dividerParams.setMargins(30, 10, 30, 10);
-                divider.setBackgroundColor(getResources().getColor(R.color.load_button_start));
-                mRvReview.addView(divider);
-            }
-        }
-        if (details.size() > n) {
-            readMoreButton.setLayoutParams(params);
-            params.setMargins(30, 10, 30, 10);
-            mRvReview.addView(readMoreButton);
-            readMoreButton.setText(String.format(Locale.US, "Read All Reviews %d", details.size()));
-            ReviewAdapter.setBackgroundState(this, readMoreButton, 0);
-            readMoreButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent i = new Intent(MovieDetailsActivity.this, ReviewActivity.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelableArrayList(ReviewActivity.REVIEW_LIST, details);
-                    i.putExtra(ReviewActivity.REVIEW_LIST, bundle);
-                    startActivity(i);
-                }
-            });
-        } else {
-            readMoreButton = null;
-        }
+    private void hideRecommendationProgressBar() {
+        recommendation_progress_bar.setVisibility(View.GONE);
     }
 
     private void setupTrailerVideoAdapter(MovieDetail details) {
@@ -410,33 +312,28 @@ public class MovieDetailsActivity extends AppCompatActivity {
         indicatorView.setOrientation(Orientation.HORIZONTAL);
     }
 
-    private void setupRecommendationAdapter(MovieDetail details) {
-
+    private void setupReview(MovieDetail details) {
         Bundle bundle = new Bundle();
-        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieRecommendation(details, 1));
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieReviewURL(details, 1));
         bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
-        Movies.Query recommendationQuery = new Movies.Query(bundle);
-
-        MoviesAdapter.Options opt = new MoviesAdapter.Options();
-        opt.roughItemWidthSize = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
-        opt.marginLeft = getResources().getDimensionPixelSize(R.dimen.margin);
-        opt.radius = getResources().getDimensionPixelSize(R.dimen.cardview_default_radius);
-
-        mRvRecommendation.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-
-        mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
-        mAdapter.setOnItemClickCallBack(mItemClickCallback);
-        mAdapter.loadMovie(recommendationQuery);
-        mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
+        Review.Query reviewQuery = new Review.Query(bundle);
+        NetworkUtil.getInstance(this).fetchResult(reviewQuery, Review.Result.class, new MovieRequest.MovieRequestListener<Review.Result>() {
             @Override
-            public void onSuccess() {
+            public void onResponse(Review.Result response) {
+                super.onResponse(response);
+                hideReviewProgressBar();
+                setupReviewLayout(response.getDetails());
             }
 
             @Override
-            public void onError(String message) {
-                if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
-                    loadRecommendationsFromDB();
-                }
+            public void onErrorResponse(VolleyError error) {
+                super.onErrorResponse(error);
+                hideReviewProgressBar();
+            }
+
+            @Override
+            public void onNetworkError() {
+                loadReviewFromDB();
             }
         });
     }
@@ -521,8 +418,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
         Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
             public void onGenerated(Palette p) {                // Use generated instance
-
-                Log.d(TAG, "createPaletteAsync");
                 Palette.Swatch vibrantSwatch = getDominantColor(p);
                 if (vibrantSwatch != null) {
                     shapeDrawable.getPaint().setColor(vibrantSwatch.getRgb());
@@ -530,7 +425,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     LayerDrawable bg = new LayerDrawable(layers);
 
                     toolbar.setTitleTextColor(vibrantSwatch.getTitleTextColor());
-                    Log.d(TAG, "Vibrant Color intValue is" + vibrantSwatch.getRgb() + " hexValue = " + Integer.toHexString(vibrantSwatch.getRgb()));
                     ReviewAdapter.setBackgroundState(MovieDetailsActivity.this, readMoreButton, vibrantSwatch.getRgb());
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                         overviewBg.setBackground(bg);
@@ -564,8 +458,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
             Single<Boolean> favObserver = Single.fromCallable(new Callable<Boolean>() {
                 @Override
                 public Boolean call() {
-                    Movies.Result result = new Movies.Result();
-                    result.loadFromDB(MovieDetailsActivity.this, details);
                     return ProviderUtil.updateFavorite(MovieDetailsActivity.this, details.getMovieID(), markedAsFav);
                 }
             });
@@ -592,8 +484,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
         Single<Boolean> favObserver = Single.fromCallable(new Callable<Boolean>() {
             @Override
             public Boolean call() {
-                Movies.Result result = new Movies.Result();
-                result.loadFromDB(MovieDetailsActivity.this, details);
                 return ProviderUtil.markedAsFavorite(MovieDetailsActivity.this, details.getMovieID());
             }
         });
@@ -615,22 +505,115 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 });
     }
 
-    private void loadRecommendationsFromDB() {
-        mRecommendationsSubscription = mRecommendationObservable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleSubscriber<Movies.Result>() {
-                    @Override
-                    public void onSuccess(Movies.Result value) {
-                        mAdapter.loadOfflineData(value);
-                    }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_movie_details);
+        ButterKnife.bind(this);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        readMoreButton = new Button(this);
+
+        details = getIntent().getBundleExtra(MOVIES_BUNDLE).getParcelable(MOVIES_DETAILS);
+        markedAsFavorite();
+        setupView(details);
+        setupShapeDrawable();
+        Glide
+                .with(this)
+                .load(details.getPosterURL())
+                .asBitmap()
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                .fitCenter()
+                .placeholder(R.drawable.empty_photo).listener(new RequestListener<String, Bitmap>() {
+            @Override
+            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                return false;
+            }
+
+            @Override
+            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target,
+                                           boolean isFromMemoryCache, boolean isFirstResource) {
+                createPaletteAsync(resource);
+                return false;
+            }
+        })
+                .into(moviePoster);
+
+        setupReview(details);
+
+
+        setupRecommendationAdapter(details);
+
+
+        setupTrailerVideoAdapter(details);
+    }
+
+    private void setupReviewLayout(final ArrayList<ReviewDetail> details) {
+        if (!details.isEmpty()) {
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, getResources().getDimensionPixelSize(R.dimen.divider));
+            int n = Math.min(details.size(), 3);
+            for (int i = 0; i < n; i++) {
+                View v = getLayoutInflater().inflate(R.layout.review_item, null);
+                v.setLayoutParams(params);
+                params.setMargins(30, 10, 30, 10);
+                ((TextView) v.findViewById(R.id.reviewer_name)).setText(details.get(i).getAuthor());
+                TextView review = (TextView) v.findViewById(R.id.review);
+                review.setText(details.get(i).getContent());
+                makeTextViewResizable(review, 5, "more", true);
+                String firstLetter = details.get(i).getAuthor().substring(0, 1).toUpperCase();
+                TextDrawable drawable1 = TextDrawable.builder()
+                        .beginConfig()
+                        .bold()
+                        // .withBorder(this.getResources().getDimensionPixelSize(R.dimen.review_avatar_spacing))
+                        .endConfig()
+                        .buildRoundRect(firstLetter, ColorGenerator.MATERIAL.getColor(details.get(i).getAuthor()), this.getResources().getDimensionPixelSize(R.dimen.review_avatar_size));
+
+                View avatar = v.findViewById(R.id.review_avatar);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    avatar.setBackground(drawable1);
+                } else {
+                    avatar.setBackgroundDrawable(drawable1);
+                }
+                mRvReview.addView(v);
+                if (i >= 0 && i < n - 1 && n != 1) {
+                    View divider = new View(this);
+                    divider.setLayoutParams(dividerParams);
+                    dividerParams.setMargins(30, 10, 30, 10);
+                    divider.setBackgroundColor(getResources().getColor(R.color.load_button_start));
+                    mRvReview.addView(divider);
+                }
+            }
+            if (details.size() > n) {
+                readMoreButton.setLayoutParams(params);
+                params.setMargins(30, 10, 30, 10);
+                mRvReview.addView(readMoreButton);
+                readMoreButton.setText(String.format(Locale.US, "Read All Reviews %d", details.size()));
+                ReviewAdapter.setBackgroundState(this, readMoreButton, 0);
+                readMoreButton.setTag(details);
+                readMoreButton.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onError(Throwable error) {
-                        ErrorDialog.show("Error occurred while loading data from database", getSupportFragmentManager());
+                    public void onClick(View v) {
+                        Intent i = new Intent(MovieDetailsActivity.this, ReviewScreen.class);
+                        Bundle bundle = new Bundle();
+
+                        bundle.putParcelableArrayList(ReviewScreen.REVIEW_LIST, details);
+
+                        i.putExtra(ReviewScreen.REVIEW_LIST_BUNDLE, bundle);
+                        startActivity(i);
                     }
                 });
+            } else {
+                readMoreButton = null;
+            }
+        } else {
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
+            TextView v = new TextView(this);
+            v.setText(getString(R.string.no_review));
+            mRvReview.addView(v, params);
+        }
     }
 
     private void loadVideosFromDB() {
@@ -640,7 +623,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 .subscribe(new SingleSubscriber<Video.Result>() {
                     @Override
                     public void onSuccess(Video.Result value) {
-                        // mAdapter.loadOfflineData(value);
                         trailerVideoAdapter.addVideoDetail(value.getVideoDetails());
                     }
 
@@ -652,6 +634,46 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
     }
 
+    private void setupRecommendationAdapter(MovieDetail details) {
+
+        Bundle bundle = new Bundle();
+        bundle.putString(MovieRequest.QUERY_URL, NetworkUtil.buildMovieRecommendation(details, 1));
+        bundle.putParcelable(MovieRequest.MOVIE_DETAILS, details);
+        Movies.Query recommendationQuery = new Movies.Query(bundle);
+
+        MoviesAdapter.Options opt = new MoviesAdapter.Options();
+        opt.roughItemWidthSize = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
+        opt.marginLeft = getResources().getDimensionPixelSize(R.dimen.margin);
+        opt.emptyView = emptyView;
+        opt.radius = getResources().getDimensionPixelSize(R.dimen.cardview_default_radius);
+
+        mRvRecommendation.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+
+        mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
+        mAdapter.setOnItemClickCallBack(mItemClickCallback);
+        mAdapter.loadMovie(recommendationQuery);
+
+        mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
+            @Override
+            public void onSuccess() {
+                hideRecommendationProgressBar();
+            }
+
+            @Override
+            public void onError(String message) {
+                if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
+                    loadRecommendationsFromDB();
+
+                } else {
+                    hideRecommendationProgressBar();
+                    ErrorDialog.show(message, getSupportFragmentManager());
+
+                }
+            }
+        });
+    }
+
+
     private void loadReviewFromDB() {
         mReviewSubscription = mReviewObservable
                 .subscribeOn(Schedulers.io())
@@ -660,6 +682,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Review.Result value) {
                         // mAdapter.loadOfflineData(value);
+                        hideReviewProgressBar();
                         setupReviewLayout(value.getDetails());
                     }
 
@@ -670,6 +693,33 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 });
     }
 
+    private void loadRecommendationsFromDB() {
+        mRecommendationSubscription = mRecommendationObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Movies.Result>() {
+                    @Override
+                    public void onSuccess(Movies.Result value) {
+                        Log.d(TAG,"onSuccess called setRecommendation result");
+                        hideRecommendationProgressBar();
+                        mAdapter.loadOfflineData(value);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        hideRecommendationProgressBar();
+                        ErrorDialog.show("Error occurred while loading data from database", getSupportFragmentManager());
+                    }
+                });
+
+    }
+
+    private void unSubscribeMovies() {
+        if (mRecommendationSubscription != null && !mRecommendationSubscription.isUnsubscribed()) {
+            mRecommendationSubscription.unsubscribe();
+        }
+
+    }
     private void unSubscribeVideos() {
         if (mVideoSubscription != null && !mVideoSubscription.isUnsubscribed()) {
             mVideoSubscription.unsubscribe();
@@ -679,12 +729,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
     private void unSubscribeReview() {
         if (mReviewSubscription != null && !mReviewSubscription.isUnsubscribed()) {
             mReviewSubscription.unsubscribe();
-        }
-    }
-
-    private void unSubscribeRecommendations() {
-        if (mRecommendationsSubscription != null && !mRecommendationsSubscription.isUnsubscribed()) {
-            mRecommendationsSubscription.unsubscribe();
         }
     }
 

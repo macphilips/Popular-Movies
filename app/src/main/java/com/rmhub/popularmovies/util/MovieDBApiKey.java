@@ -8,5 +8,5 @@ package com.rmhub.popularmovies.util;
  */
 
   class MovieDBApiKey {
-      static final String API_KEY = "dc06826f3a59347eb05ec710ed383f54";
+      static final String API_KEY = "<<API_KEY>>";
 }

@@ -16,6 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:visibility="invisible" />
+    <include android:layout_height="match_parent" android:layout_width="match_parent" layout="@layout/empty_layout"/>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rv_movie_list"
@@ -23,23 +24,5 @@
         android:layout_height="match_parent"
         android:background="@color/grey" />
 
-    <FrameLayout
-        android:id="@+id/error_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/overlay"
-        android:orientation="vertical"
-        android:padding="5dp"
-        android:visibility="invisible">
 
-        <ImageView
-            android:id="@+id/refresh_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:contentDescription="@string/image_desc"
-            android:padding="10dp"
-            app:srcCompat="@drawable/ic_refresh" />
-
-    </FrameLayout>
 </FrameLayout>

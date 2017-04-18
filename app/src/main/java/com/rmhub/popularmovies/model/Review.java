@@ -2,7 +2,6 @@ package com.rmhub.popularmovies.model;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -64,7 +63,6 @@ public class Review {
         @Override
         public void saveToDatabase(Context context, MovieDetail detail) {
             if (details != null && !details.isEmpty()) {
-                Log.d(getClass().getSimpleName(), "Insert in review to database");
                 ProviderUtil.insertReview(context, detail, details);
             }
         }

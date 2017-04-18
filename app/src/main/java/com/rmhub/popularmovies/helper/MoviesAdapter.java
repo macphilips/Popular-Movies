@@ -63,12 +63,11 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         setUpRecyclerView();
     }
 
-    public MoviesAdapter(AppCompatActivity mContext, RecyclerView recyclerView) {
-        this(mContext, recyclerView, null);
+    public boolean isEmpty() {
+        return movieList.isEmpty();
     }
 
     private void setUpRecyclerView() {
-        final int mImageThumbSpacing;
         final int mImageWidthSize;
         if (options.roughItemWidthSize > 0) {
             mImageWidthSize = options.roughItemWidthSize;
@@ -114,6 +113,19 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     private void setImageLayoutSize(int width, int height) {
         mImageViewLayoutParams = new LinearLayout.LayoutParams(width, height);
     }
+
+    private void showEmptyView() {
+        if (options.emptyView != null) {
+            options.emptyView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void hideEmptyView() {
+        if (options.emptyView != null) {
+            options.emptyView.setVisibility(View.GONE);
+        }
+    }
+
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -192,22 +204,16 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         }
         bundle.putInt(SCROLL_POSITION, position);
         outState.putBundle(LIST_BUNDLE, bundle);
-        Log.d(TAG, this.toString());
-        Log.d(TAG, "position => " + position);
     }
 
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         Bundle bundle = savedInstanceState.getBundle(LIST_BUNDLE);
         if (bundle != null) {
-            Log.d(TAG, "bundle not null");
             movieList = bundle.getParcelableArrayList(MOVIE_LIST);
             nextPage = bundle.getInt(CURRENT_PAGE_NUMBER);
             totalPages = bundle.getInt(TOTAL_PAGE);
             totalCount = bundle.getInt(TOTAL_COUNT);
-
-            Log.d(TAG, this.toString());
             int scrollTo = bundle.getInt(SCROLL_POSITION);
-            Log.d(TAG, "position => " + scrollTo);
             if (movieList != null) {
                // resetAdapter();
                 addMovieList(movieList);
@@ -240,6 +246,11 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         if (movieList == null) {
             return;
         }
+        if (this.movieList.isEmpty() && movieList.isEmpty()) {
+            showEmptyView();
+        } else {
+            hideEmptyView();
+        }
         Log.d(TAG, "Adding movies to list");
         this.movieList.addAll(movieList);
         currentCount = this.movieList.size();
@@ -267,34 +278,37 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     }
 
     public void loadMovie(Movies.Query query) {
-        NetworkUtil.getInstance(mContext).fetchResult(query, Movies.Result.class, new MovieRequest.MovieRequestListener<Movies.Result>() {
+        NetworkUtil.getInstance(mContext).fetchResult(query, Movies.Result.class,
+                new MovieRequest.MovieRequestListener<Movies.Result>() {
             @Override
             public void onResponse(Movies.Result result) {
                 super.onResponse(result);
+
+                if (result.getCurrentPage() == 1) resetAdapter();
+                setResult(result);
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onSuccess();
                 }
-                if (result.getCurrentPage() == 1) resetAdapter();
-                setResult(result);
             }
 
             @Override
             public void onErrorResponse(VolleyError error) {
                 super.onErrorResponse(error);
+                mScrollChange.setLoading();
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onError("Unable to fetch data");
                 }
-                mScrollChange.setLoading();
+                addMovieList(new ArrayList<MovieDetail>());
             }
 
             @Override
             public void onNetworkError() {
                 super.onNetworkError();
+                mScrollChange.setLoading();
+                Log.d(TAG,"onNetworkError Called");
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onError(mContext.getResources().getString(R.string.no_network_connection_toast));
                 }
-                Log.d(TAG, this.toString());
-                mScrollChange.setLoading();
             }
         });
     }
@@ -338,8 +352,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         public int marginTop = 0;
         public int radius = 0;
         public int marginBottom = 0;
-
         public int padding = 0;
+        public View emptyView;
     }
 
     static class MyViewHolder extends RecyclerView.ViewHolder {

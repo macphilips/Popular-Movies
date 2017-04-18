@@ -16,15 +16,8 @@
 
 package com.rmhub.popularmovies.util;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
-import android.util.Log;
-import android.widget.Toast;
-
-import com.rmhub.popularmovies.R;
 
 
 /**
@@ -34,34 +27,6 @@ public class Utils {
     private static final String TAG = "Utils";
 
     private Utils() {
-    }
-
-    public static void checkConnection(Context context) {
-
-        final ConnectivityManager cm =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-        if (networkInfo == null || !networkInfo.isConnectedOrConnecting()) {
-            Toast.makeText(context, R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
-            Log.e(TAG, "checkConnection - no connection found");
-        }
-    }
-    public static boolean hasFroyo() {
-        // Can use static final constants like FROYO, declared in later versions
-        // of the OS since they are inlined at compile time. This is guaranteed behavior.
-        return Build.VERSION.SDK_INT >= VERSION_CODES.FROYO;
-    }
-
-    public static boolean hasGingerbread() {
-        return Build.VERSION.SDK_INT >= VERSION_CODES.GINGERBREAD;
-    }
-
-    public static boolean hasHoneycomb() {
-        return Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;
-    }
-
-    public static boolean hasHoneycombMR1() {
-        return Build.VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB_MR1;
     }
 
     public static boolean hasJellyBean() {

@@ -2,6 +2,7 @@ package com.rmhub.popularmovies.model;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -107,6 +108,7 @@ public class Movies {
             currentPage = -1;
             total_count = movieList.size();
             total_page = -1;
+            Log.d(getClass().getSimpleName(),this.toString());
         }
 
         @Override
