@@ -218,15 +218,12 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                // resetAdapter();
                 addMovieList(movieList);
                 mScrollChange.setLoading();
-                mRecyclerView.scrollToPosition(scrollTo);
+                mRecyclerView.getLayoutManager().scrollToPosition(scrollTo);
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onSuccess();
                 }
             }
-
         }
-
-
     }
 
     public void reload() {
@@ -308,6 +305,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                 Log.d(TAG,"onNetworkError Called");
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onError(mContext.getResources().getString(R.string.no_network_connection_toast));
+                    Log.d(TAG,"onloadadapter is not null");
                 }
             }
         });

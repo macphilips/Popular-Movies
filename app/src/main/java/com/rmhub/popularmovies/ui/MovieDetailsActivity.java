@@ -121,7 +121,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
     Single<Movies.Result> mRecommendationObservable = Single.fromCallable(new Callable<Movies.Result>() {
         @Override
         public Movies.Result call() {
-            Log.d(TAG,"Load recommendation from DB");
             Movies.Result result = new Movies.Result();
             result.loadFromDB(MovieDetailsActivity.this,details);
             return result;
@@ -651,8 +650,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
         mAdapter = new MoviesAdapter(this, mRvRecommendation, opt);
         mAdapter.setOnItemClickCallBack(mItemClickCallback);
-        mAdapter.loadMovie(recommendationQuery);
-
         mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
             @Override
             public void onSuccess() {
@@ -660,8 +657,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(String message) {
+            public void onError(String message) { Log.d(TAG,String.valueOf(message));
+
                 if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
+
+                    Log.d(TAG,"Load recommendation from DB");
                     loadRecommendationsFromDB();
 
                 } else {
@@ -671,6 +671,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 }
             }
         });
+        mAdapter.loadMovie(recommendationQuery);
     }
 
 
@@ -708,6 +709,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onError(Throwable error) {
                         hideRecommendationProgressBar();
+
                         ErrorDialog.show("Error occurred while loading data from database", getSupportFragmentManager());
                     }
                 });

@@ -42,7 +42,9 @@ public class NetworkUtil {
     private NetworkUtil(Context context) {
         mCtx = context.getApplicationContext();
         Log.d(TAG, "is context the same with the application context? " + (context == context.getApplicationContext()));
-
+        if (mCtx == null) {
+            Log.d(TAG, "the application");
+        }
         mRequestQueue = getRequestQueue();
 
         mImageLoader = new ImageLoader(mRequestQueue,
@@ -106,7 +108,9 @@ public class NetworkUtil {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnectedOrConnecting()) {
-              Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
+            //   Toast.makeText(context, com.rmhub.simpleimagefetcher.R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
+
+            Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
             return false;
         }
         return true;
