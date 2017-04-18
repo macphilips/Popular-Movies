@@ -64,10 +64,7 @@ public class NetworkUtil {
                 });
     }
 
-    public static String buildMoviesURL(int page_num) {
-        return String.format(Locale.US,
-                "%s?api_key=%s&page=%d&language=en-US", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
-    }
+    public static String API_KEY = "<<API_KEY>>";
 
     public static void setDefaultEndpointUrl(Context ctx, String key) {
         if (key.equalsIgnoreCase(ctx.getString(R.string.sort_popular_value))) {
@@ -78,23 +75,28 @@ public class NetworkUtil {
 
     }
 
+    public static String buildMoviesURL(int page_num) {
+        return String.format(Locale.US,
+                "%s?api_key=%s&page=%d&language=en-US", DEFAULT_ENDPOINT_URL, NetworkUtil.API_KEY, page_num);
+    }
+
     public static String buildMovieReviewURL(MovieDetail details, int page_num) {
         return String.format(Locale.US,
-                "%s/%d/reviews?api_key=%s&page=%d&language=en-US", MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+                "%s/%d/reviews?api_key=%s&page=%d&language=en-US", MOVIE_ENDPOINT_URL, details.getMovieID(), NetworkUtil.API_KEY, page_num);
 
     }
 
     public static String buildMovieRecommendation(MovieDetail details, int page_num) {
         return String.format(Locale.US,
                 "%s/%d/recommendations?api_key=%s&page=%d&language=en-US",
-                MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+                MOVIE_ENDPOINT_URL, details.getMovieID(), NetworkUtil.API_KEY, page_num);
 
     }
 
     public static String buildMovieVideos(MovieDetail details, int page_num) {
         return String.format(Locale.US,
                 "%s/%d/videos?api_key=%s&page=%d&language=en-US",
-                MOVIE_ENDPOINT_URL, details.getMovieID(), MovieDBApiKey.API_KEY, page_num);
+                MOVIE_ENDPOINT_URL, details.getMovieID(), NetworkUtil.API_KEY, page_num);
 
     }
 
