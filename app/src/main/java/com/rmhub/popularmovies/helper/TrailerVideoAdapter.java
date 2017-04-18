@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
@@ -68,6 +69,7 @@ public class TrailerVideoAdapter extends PagerAdapter {
         Glide
                 .with(mCtx)
                 .load(NetworkUtil.buildYoutubeVideoThumbnailURL(videoDetails.get(position).getVideoID()))
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .fitCenter()
                 .placeholder(R.drawable.empty_photo)
                 .crossFade().listener(new RequestListener<String, GlideDrawable>() {

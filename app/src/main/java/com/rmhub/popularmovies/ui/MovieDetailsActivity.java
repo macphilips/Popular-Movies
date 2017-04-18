@@ -32,6 +32,7 @@ import com.amulyakhare.textdrawable.TextDrawable;
 import com.amulyakhare.textdrawable.util.ColorGenerator;
 import com.android.volley.VolleyError;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.rd.Orientation;
@@ -233,12 +234,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
         markedAsFavorite();
         setupView(details);
         setupShapeDrawable();
-      //  int posterWidth = getResources().getDimensionPixelSize(R.dimen.poster_width_size);
         Glide
                 .with(this)
                 .load(details.getPosterURL())
                 .asBitmap()
-                //  .override(posterWidth, (int) (( 1.5) * posterWidth))
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .fitCenter()
                 .placeholder(R.drawable.empty_photo).listener(new RequestListener<String, Bitmap>() {
             @Override
