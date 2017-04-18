@@ -6,7 +6,6 @@ import android.os.Bundle;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.helper.MovieQuery;
-import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
@@ -63,10 +62,6 @@ public class Video {
             this.videoDetails = videoDetails;
         }
 
-        @Override
-        public void onFetchResult(String result) {
-            videoDetails = ParseResult.parseVideo(result, this);
-        }
 
         @Override
         public void saveToDatabase(Context context, MovieDetail moveID) {

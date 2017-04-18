@@ -1,14 +1,15 @@
 package com.rmhub.popularmovies.ui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -19,20 +20,24 @@ import android.view.Window;
 import android.widget.ProgressBar;
 
 import com.rmhub.popularmovies.R;
-import com.rmhub.popularmovies.helper.MovieLoader;
 import com.rmhub.popularmovies.helper.MoviesAdapter;
-import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.model.MovieDetail;
 import com.rmhub.popularmovies.model.Movies;
 import com.rmhub.popularmovies.util.Utils;
 
 import java.util.Locale;
+import java.util.concurrent.Callable;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, LoaderManager.LoaderCallbacks<ResultHandler> {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int SETTINGS = 2;
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -58,6 +63,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+
+    Single<Movies.Result> moviesObservable = Single.fromCallable(new Callable<Movies.Result>() {
+        @Override
+        public Movies.Result call() {
+            Movies.Result result = new Movies.Result();
+            result.loadFromDB(MainActivity.this);
+            return result;
+        }
+    });
+    Single<Movies.Result> favoriteMoviesObservable = Single.fromCallable(new Callable<Movies.Result>() {
+        @Override
+        public Movies.Result call() {
+            Movies.Result result = new Movies.Result();
+            result.loadFavFromDB(MainActivity.this);
+            return result;
+        }
+    });
+    private Subscription mMoviesSubscription = null;
+    private Subscription mFavoriteMoviesSubscription = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,20 +100,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.setOnItemClickCallBack(this);
         mAdapter.setLoadAdapter(new MoviesAdapter.OnLoadAdapter() {
             @Override
-            public void success() {
+            public void onSuccess() {
                 hideIndicator();
             }
 
             @Override
-            public void failed(String message) {
+            public void onError(String message) {
                 if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
-                    LoaderManager loaderManager = getSupportLoaderManager();
+               /*     LoaderManager loaderManager = getSupportLoaderManager();
                     Loader<ResultHandler> loader = loaderManager.getLoader(MOVIE_LOADER);
                     if (loader == null) {
                         loaderManager.initLoader(MOVIE_LOADER, null, MainActivity.this);
                     } else {
                         loaderManager.restartLoader(MOVIE_LOADER, null, MainActivity.this);
-                    }
+                    }*/
+                    loadMoviesFromDB();
                     showSnackMessage(message);
                 } else {
                     hideIndicator();
@@ -96,9 +122,73 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
-
         showIndicator();
-        mAdapter.loadMovie();
+        if (savedInstanceState == null) {
+            mAdapter.loadMovie();
+        }else {
+            Log.d(TAG,"savedInstanceState not null");
+        }
+    }
+
+    private void loadMoviesFromDB() {
+        mMoviesSubscription = moviesObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Movies.Result>() {
+                    @Override
+                    public void onSuccess(Movies.Result value) {
+                        hideIndicator();
+                        mAdapter.loadOfflineData(value);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        hideIndicator();
+                        ErrorDialog.show("Error occurred while loading data from database", getSupportFragmentManager());
+                    }
+                });
+
+    }
+
+    private void unSubscribeMovies() {
+        if (mMoviesSubscription != null && !mMoviesSubscription.isUnsubscribed()) {
+            mMoviesSubscription.unsubscribe();
+        }
+
+    }
+
+    private void loadFavoriteMoviesFromDB() {
+        mFavoriteMoviesSubscription = favoriteMoviesObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleSubscriber<Movies.Result>() {
+                    @Override
+                    public void onSuccess(Movies.Result value) {
+                        hideIndicator();
+                        mAdapter.loadOfflineData(value);
+                    }
+
+                    @Override
+                    public void onError(Throwable error) {
+                        hideIndicator();
+                        ErrorDialog.show("Error occurred while loading data from database", getSupportFragmentManager());
+                    }
+                });
+
+    }
+
+    private void unSubscribeFavoriteMovies() {
+        if (mFavoriteMoviesSubscription != null && !mFavoriteMoviesSubscription.isUnsubscribed()) {
+            mFavoriteMoviesSubscription.unsubscribe();
+        }
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unSubscribeFavoriteMovies();
+        unSubscribeMovies();
     }
 
     private void showSnackMessage(String message) {
@@ -155,7 +245,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -167,6 +256,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (id) {
             case R.id.action_settings:
                 startActivityForResult(new Intent(this, SettingsActivity.class), SETTINGS);
+                return true;
+            case R.id.action_sort:
+                showLabelsPopup();
                 return true;
 
             default:
@@ -196,6 +288,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        Log.d(TAG,"onSaveInstanceState");
         mAdapter.onSaveInstanceState(outState);
     }
 
@@ -203,26 +296,56 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mAdapter.onRestoreInstanceState(savedInstanceState);
+        Log.d(TAG,"onRestoreInstanceState");
     }
 
-    @Override
-    public Loader<ResultHandler> onCreateLoader(int id, Bundle args) {
+    private void showLabelsPopup() {
+        View view = findViewById(R.id.action_sort);
+        PopupMenu popup = new PopupMenu(this, view);
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
 
-        return new MovieLoader(this,Movies.Result.class);
-    }
+                switch (item.getItemId()) {
+                    case R.id.sort_popular:
+                        saveChanges(getResources().getString(R.string.sort_popular_value));
+                        reload();
+                        return true;
 
-    @Override
-    public void onLoadFinished(Loader<ResultHandler> loader, ResultHandler data) {
-        Log.e(TAG,"onLoadFinished");
-        hideIndicator();
-        if (data != null) {
-            Log.e(TAG,"dATA NOT NULL");
-            mAdapter.loadOfflineData((Movies.Result) data);
+                    case R.id.sort_rating:
+                        saveChanges(getResources().getString(R.string.sort_top_rate_value));
+                        reload();
+                        return true;
+                    case R.id.sort_favorite:
+                        loadFavoriteMoviesFromDB();
+                        return true;
+                    default:
+                        return false;
+                }
+
+            }
+        });
+        popup.inflate(R.menu.sort_menu);
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String key = sharedPreferences.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
+        int id;
+        if (key.equalsIgnoreCase(getResources().getString(R.string.sort_top_rate_value))) {
+            id = (R.id.sort_rating);
+        } else {
+            id = (R.id.sort_popular);
         }
+        MenuItem popupItem = popup.getMenu().findItem(id);
+        popupItem.setCheckable(true);
+        popupItem.setChecked(true);
+        popup.show();
     }
 
-    @Override
-    public void onLoaderReset(Loader<ResultHandler> loader) {
-
+    void saveChanges(String value) {
+        SharedPreferences appSharedPrefs = PreferenceManager
+                .getDefaultSharedPreferences(this.getApplicationContext());
+        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+        prefsEditor.putString(getResources().getString(R.string.sort_key), value);
+        prefsEditor.apply();
     }
 }

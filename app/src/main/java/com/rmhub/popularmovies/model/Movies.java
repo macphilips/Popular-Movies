@@ -6,11 +6,9 @@ import android.os.Bundle;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.helper.MovieQuery;
-import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -73,14 +71,6 @@ public class Movies {
         }
 
         @Override
-        public void onFetchResult(String result) {
-            ParseResult.parseMovieResult(result, this);
-            if (movieList == null) {
-                movieList = new ArrayList<>();
-            }
-        }
-
-        @Override
         public void saveToDatabase(Context context) {
             if (movieList != null) {
                 ProviderUtil.insertMovies(context, movieList);
@@ -122,6 +112,14 @@ public class Movies {
         @Override
         public void loadFromDB(Context ctx) {
             movieList = ProviderUtil.getMovies(ctx);
+            currentPage = -1;
+            total_count = movieList.size();
+            total_page = -1;
+
+        }
+
+        public void loadFavFromDB(Context ctx) {
+            movieList = ProviderUtil.getFavoriteMovies(ctx);
             currentPage = -1;
             total_count = movieList.size();
             total_page = -1;

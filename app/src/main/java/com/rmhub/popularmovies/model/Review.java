@@ -7,7 +7,6 @@ import android.util.Log;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.rmhub.popularmovies.helper.MovieQuery;
-import com.rmhub.popularmovies.helper.ParseResult;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.util.ProviderUtil;
 
@@ -61,10 +60,6 @@ public class Review {
         @Expose
         private ArrayList<ReviewDetail> details;
 
-        @Override
-        public void onFetchResult(String result) {
-            details = ParseResult.parseReview(result, this);
-        }
 
         @Override
         public void saveToDatabase(Context context, MovieDetail detail) {

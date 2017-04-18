@@ -11,9 +11,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.util.Set;
+
 
 public class MovieProvider extends ContentProvider {
-
     private static final int MOVIES = 100;
     private static final int MOVIES_FOR_ID = 101;
     private static final int REVIEWS = 200;
@@ -39,7 +40,7 @@ public class MovieProvider extends ContentProvider {
         matcher.addURI(Contract.AUTHORITY, Contract.REVIEWS, REVIEWS);
         matcher.addURI(Contract.AUTHORITY, Contract.PATH_REVIEWS_WITH_ID, REVIEWS_FOR_ID);
 
-        matcher.addURI(Contract.AUTHORITY, Contract.VIDEOS, REVIEWS);
+        matcher.addURI(Contract.AUTHORITY, Contract.VIDEOS, VIDEOS);
         matcher.addURI(Contract.AUTHORITY, Contract.PATH_VIDEOS_WITH_ID, VIDEOS_FOR_ID);
 
         return matcher;
@@ -253,7 +254,6 @@ public class MovieProvider extends ContentProvider {
     public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
 
         final SQLiteDatabase db = dbHelper.getWritableDatabase();
-
         int returnCount;
         Context context;
         switch (uriMatcher.match(uri)) {
@@ -263,13 +263,12 @@ public class MovieProvider extends ContentProvider {
                 db.beginTransaction();
                 try {
                     for (ContentValues value : values) {
-                        long valueReturned = db.insert(
+                        long valueReturned = db.replace(
                                 Contract.MOVIES,
                                 null,
                                 value
                         );
 
-                        Log.v(getClass().getSimpleName(), "row id " + valueReturned);
                     }
                     db.setTransactionSuccessful();
                 } finally {
@@ -356,5 +355,30 @@ public class MovieProvider extends ContentProvider {
         }
 
 
+    }
+
+    private String constructSQLStatement(String table, ContentValues value) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("INSERT INTO ").append(table).append("(");
+        Set<String> keys = value.keySet();
+        int i = 0;
+        for (String key : keys) {
+            builder.append(key);
+            if (i < keys.size()-1) {
+                builder.append(",");
+            }
+            i++;
+        }
+        i = 0;
+        builder.append(")").append(" VALUES (");
+        for (String key : keys) {
+            builder.append(String.valueOf(value.get(key)));
+            if (i < keys.size()-1) {
+                builder.append(",");
+            }
+            i++;
+        }
+        builder.append(");");
+        return builder.toString();
     }
 }

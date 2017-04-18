@@ -43,16 +43,11 @@ dependencies {
 
 
     compile 'io.reactivex:rxjava:1.1.0'
-    compile 'io.reactivex:rxjava-async-util:0.21.0'
     compile 'io.reactivex:rxandroid:1.1.0'
-    compile 'com.jakewharton.rxbinding:rxbinding:0.3.0'
-    compile 'com.trello:rxlifecycle:0.4.0'
-    compile 'com.trello:rxlifecycle-components:0.4.0'
 
 
 
     compile 'com.android.volley:volley:1.0.0'
-    compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'com.google.code.gson:gson:2.7'
 
     compile 'com.jakewharton:butterknife:8.4.0'

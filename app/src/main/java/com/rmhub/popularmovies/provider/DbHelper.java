@@ -28,7 +28,7 @@ class DbHelper extends SQLiteOpenHelper {
                 + Contract.Movies.COLUMN_RELEASE_DATE + " TEXT NOT NULL, "
                 + Contract.Movies.COLUMN_AVERAGE_VOTE + " TEXT NOT NULL, "
                 + Contract.Movies.COLUMN_CATEGORY + " INTEGER NOT NULL DEFAULT \'0\', "
-                + Contract.Movies.COLUMN_POPULARITY + " REAL NOT NULL DEFAULT \'0\', "
+                + Contract.Movies.COLUMN_POPULARITY + " TEXT NOT NULL DEFAULT \'0\', "
                 + Contract.Movies.FAVORITE + " INTEGER NOT NULL DEFAULT \'0\'" +
                 ");";
 

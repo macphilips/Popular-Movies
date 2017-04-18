@@ -12,14 +12,12 @@ import com.rmhub.popularmovies.model.MovieDetail;
  */
 
 public abstract class ResultHandler {
-    public abstract void onFetchResult(String result);
 
     public void saveToDatabase(Context context) {
     }
     public void saveToDatabase(Context context, MovieDetail moveID){}
 
     public void loadFromDB(Context context) {
-
     }
 
     public void loadFromDB(Context context, MovieDetail moveID) {

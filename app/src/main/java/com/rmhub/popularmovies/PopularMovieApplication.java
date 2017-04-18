@@ -27,7 +27,7 @@ public class PopularMovieApplication extends Application implements SharedPrefer
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equalsIgnoreCase(getString(R.string.sort_key))) {
-            NetworkUtil.setDefaultEndpointUrl(sharedPreferences.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value)));
+            NetworkUtil.setDefaultEndpointUrl(this, sharedPreferences.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value)));
         }
 
     }

@@ -438,12 +438,14 @@ public class MovieDetail implements Parcelable {
     @Override
     public String toString() {
         return "MovieDetail{" +
-                "backdrop_path='" + backdrop_path + '\'' +
-                ", poster_path='" + poster_path + '\'' +
-                ", title='" + title + '\'' +
-                ", movieID=" + movieID +
+               // "title='" + title + '\'' +
+               // ", overview='" + overview + '\'' +
+               // ", poster_path='" + poster_path + '\'' +
                 ", vote_average=" + vote_average +
+                //", backdrop_path='" + backdrop_path + '\'' +
+               // ", movieID=" + movieID +
+                ", popularity=" + popularity +
+                ", favorite=" + favorite +
                 '}';
     }
-
 }

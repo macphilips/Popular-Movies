@@ -4,23 +4,18 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.annotation.Nullable;
 import android.support.v4.util.LruCache;
 import android.util.Log;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
+import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.helper.MovieQuery;
 import com.rmhub.popularmovies.helper.ResultHandler;
 import com.rmhub.popularmovies.model.MovieDetail;
 import com.rmhub.popularmovies.model.VideoDetail;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Locale;
 
 /**
@@ -38,7 +33,6 @@ public class NetworkUtil {
     private static final String POPULAR_MOVIE_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/popular";
     private static final String TOP_RATED_MOVIES_ENDPOINT_URL = MOVIE_ENDPOINT_URL + "/top_rated";
     private final static String TAG = NetworkUtil.class.getSimpleName();
-    public static int movie_category = 0;
     private static String DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
     private static NetworkUtil mInstance;
     private static Context mCtx;
@@ -75,20 +69,13 @@ public class NetworkUtil {
                 "%s?api_key=%s&page=%d&language=en-US", DEFAULT_ENDPOINT_URL, MovieDBApiKey.API_KEY, page_num);
     }
 
-    public static void setDefaultEndpointUrl(String key) {
-        switch (key) {
-            case "popular":
-                DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
-                movie_category = 1;
-                break;
-            case "top_rated":
-                DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
-                movie_category = 2;
-                break;
-            case "favorite":
-                movie_category = 3;
-                break;
+    public static void setDefaultEndpointUrl(Context ctx, String key) {
+        if (key.equalsIgnoreCase(ctx.getString(R.string.sort_popular_value))) {
+            DEFAULT_ENDPOINT_URL = POPULAR_MOVIE_ENDPOINT_URL;
+        } else if (key.equalsIgnoreCase(ctx.getString(R.string.sort_top_rate_value))) {
+            DEFAULT_ENDPOINT_URL = TOP_RATED_MOVIES_ENDPOINT_URL;
         }
+
     }
 
     public static String buildMovieReviewURL(MovieDetail details, int page_num) {
@@ -111,42 +98,12 @@ public class NetworkUtil {
 
     }
 
-    @Nullable
-    public static void fetchResult(String url_string, ResultHandler callback) {
-        URL url;
-        String result = "";
-        BufferedReader in;
-        try {
-            Log.d("sending post request", "url=" + url_string);
-            url = new URL(url_string);
-            HttpURLConnection conn;
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setDoInput(true);
-            conn.setRequestMethod("GET");
-            conn.connect();
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String inputLine;
-            String code = conn.getRequestMethod();
-            while ((inputLine = in.readLine()) != null) {
-                result = result.concat(inputLine);
-            }
-            callback.onFetchResult(result);
-            Log.d("", String.valueOf(code));
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            result = null;
-        } catch (NumberFormatException ignored) {
-        }
-        Log.d("sendPostHttpRequest", String.valueOf(result));
-    }
-
     /**
      * Simple network connection check.
      *
      * @param context
      */
-    public static boolean checkConnection(Context context) {
+    private static boolean checkConnection(Context context) {
         final ConnectivityManager cm =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
@@ -192,7 +149,7 @@ public class NetworkUtil {
         mRequestQueue.cancelAll(query.getClass().getSimpleName());
     }
 
-    public RequestQueue getRequestQueue() {
+    private RequestQueue getRequestQueue() {
         if (mRequestQueue == null) {
             // getApplicationContext() is key, it keeps you from leaking the
             // Activity or BroadcastReceiver if someone passes one in.

@@ -16,6 +16,8 @@ import com.rmhub.popularmovies.model.VideoDetail;
 import com.rmhub.popularmovies.provider.Contract;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -53,6 +55,7 @@ public class ProviderUtil {
             movieCV.put(Contract.Movies.COLUMN_RELEASE_DATE, movieDetails.getRelease_date());
 
             movieCV.put(Contract.Movies.COLUMN_POPULARITY, movieDetails.getPopularity());
+            Log.e(TAG, String.valueOf(movieDetails));
             movieCVs.add(movieCV);
         }
 
@@ -70,6 +73,9 @@ public class ProviderUtil {
 
         List<ContentValues> recommendationCVs = new ArrayList<>();
         List<ContentValues> movieCVs = new ArrayList<>();
+
+        Log.e(TAG, "Recommended movies for " + String.valueOf(detail));
+
         for (MovieDetail recommended : details) {
             ContentValues recommendationCV = new ContentValues();
             recommendationCV.put(Contract.Recommendation.COLUMN_MOVIE_ID, detail.getMovieID());
@@ -87,6 +93,8 @@ public class ProviderUtil {
             movieCV.put(Contract.Movies.COLUMN_RELEASE_DATE, recommended.getRelease_date());
             movieCV.put(Contract.Movies.COLUMN_CATEGORY, recommended.getCategory());
             movieCVs.add(movieCV);
+
+            Log.e(TAG, String.valueOf(recommended));
 
         }
 
@@ -152,36 +160,44 @@ public class ProviderUtil {
         return new ArrayList<>();
     }
 
-    public static int updateFavorite(Context context, int movieID, boolean value) {
+    public static boolean updateFavorite(Context context, int movieID, boolean value) {
         Log.i(ProviderUtil.class.getSimpleName(), "Updating favorite " + value);
         Uri uri = Contract.Movies.URI.buildUpon().appendPath(String.valueOf(movieID)).build();
         ContentValues contentValues = new ContentValues();
         contentValues.put(Contract.Movies.FAVORITE, value);
         String selection = Contract.Movies.COLUMN_MOVIE_ID + " = ?";
         String selectionArgs[] = {String.valueOf(movieID)};
-        return context.getContentResolver().update(uri, contentValues, selection, selectionArgs);
+        context.getContentResolver().update(uri, contentValues, selection, selectionArgs);
 
+        return markedAsFavorite(context, movieID);
+
+    }
+
+    public static boolean markedAsFavorite(Context context, int movieID) {
+        boolean result;
+
+        Uri uri = Contract.Movies.URI.buildUpon().appendPath(String.valueOf(movieID)).build();
+        Cursor cursor = context.getContentResolver().query(uri, new String[]{Contract.Movies.FAVORITE}, Contract.Movies.COLUMN_MOVIE_ID + "=?", new String[]{String.valueOf(movieID)}, null);
+        if (cursor == null || isCursorEmpty(cursor)) {
+            return false;
+        }
+        cursor.moveToFirst();
+        result = cursor.getInt(cursor.getColumnIndexOrThrow(Contract.Movies.FAVORITE)) == 1;
+        cursor.close();
+        return result;
     }
 
     public static ArrayList<MovieDetail> getMovies(Context context) {
 
         ArrayList<MovieDetail> arrayList = new ArrayList<>();
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
-        String key = settings.getString(context.getResources().getString(R.string.sort_key), context.getString(R.string.sort_default_value));
-        String orderBy = "";
-        if (key.equalsIgnoreCase("top_rated")) {
-            orderBy = Contract.Movies.COLUMN_AVERAGE_VOTE;
-        } else {
-            orderBy = Contract.Movies.COLUMN_POPULARITY;
-        }
-        orderBy = orderBy + " DESC";
+
 
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(),
                 Contract.Movies.URI,
                 null,
                 null,
                 null,
-                orderBy,
+                null,
                 null);
 
         if (cursor == null || isCursorEmpty(cursor)) {
@@ -191,15 +207,31 @@ public class ProviderUtil {
         while (true) {
             MovieDetail emp = MovieDetail.buildFrom(cursor);
             arrayList.add(emp);
-            Log.d(TAG, String.valueOf(emp));
             if (!cursor.moveToNext())
                 break;
         }
         cursor.close();
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = settings.getString(context.getResources().getString(R.string.sort_key), context.getString(R.string.sort_default_value));
+        if (key.equalsIgnoreCase(context.getString(R.string.sort_top_rate_value))) {
+            Collections.sort(arrayList, new Comparator<MovieDetail>() {
+                @Override
+                public int compare(MovieDetail o1, MovieDetail o2) {
+                    return (int) Math.signum(o2.getVote_average() - o1.getVote_average());
+                }
+            });
+        } else {
+            Collections.sort(arrayList, new Comparator<MovieDetail>() {
+                @Override
+                public int compare(MovieDetail o1, MovieDetail o2) {
+                    return (int) Math.signum(o2.getPopularity() - o1.getPopularity());
+                }
+            });
+        }
         return arrayList;
     }
 
-    public static ArrayList<MovieDetail> getFavorite(Context context) {
+    public static ArrayList<MovieDetail> getFavoriteMovies(Context context) {
         ArrayList<MovieDetail> arrayList = getMovies(context);
         ArrayList<MovieDetail> result = new ArrayList<>();
         for (MovieDetail detail :
@@ -213,6 +245,7 @@ public class ProviderUtil {
 
     public static ArrayList<MovieDetail> getRecommendations(Context context, MovieDetail details) {
 
+        Log.e(TAG, "getRecommendations");
         ArrayList<MovieDetail> arrayList = new ArrayList<>();
         Cursor recommendationCursor = ContentResolverCompat.query(context.getContentResolver(),
                 Contract.Recommendation.makeWithID(details.getMovieID()),
@@ -236,12 +269,16 @@ public class ProviderUtil {
             if (!recommendationCursor.moveToNext())
                 break;
         }
-        recommendationCursor.close();
+        recommendationCursor.close();  for (MovieDetail detail: arrayList){
+            Log.e(TAG, String.valueOf(detail));
+
+        }
         details.setRecommendations(arrayList);
         return arrayList;
     }
 
     public static ArrayList<ReviewDetail> getReviews(Context context, MovieDetail details) {
+        Log.e(TAG, "getReviews");
         ArrayList<ReviewDetail> arrayList = new ArrayList<>();
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Reviews.makeUriWithID(details.getMovieID()),
                 null, null, null, null, null);
@@ -258,14 +295,16 @@ public class ProviderUtil {
                 break;
         }
         cursor.close();
-        details.setReviews(arrayList);
+        details.setReviews(arrayList);  for (ReviewDetail detail: arrayList){
+            Log.e(TAG, String.valueOf(detail));
+
+        }
         return arrayList;
     }
 
-
     public static ArrayList<VideoDetail> getVideos(Context context, MovieDetail details) {
+        Log.e(TAG, "getVideo");
         ArrayList<VideoDetail> arrayList = new ArrayList<>();
-
         Cursor cursor = ContentResolverCompat.query(context.getContentResolver(), Contract.Video.makeUriWithID(details.getMovieID()),
                 null, null, null, null, null);
         if (cursor == null || isCursorEmpty(cursor)) {
@@ -282,6 +321,10 @@ public class ProviderUtil {
                 break;
         }
         cursor.close();
+        for (VideoDetail detail: arrayList){
+            Log.e(TAG, String.valueOf(detail));
+
+        }
         details.setVideos(arrayList);
         return arrayList;
     }
