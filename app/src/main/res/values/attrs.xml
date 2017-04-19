@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="CustomImageView">
+        <attr name="corner_radius" format="dimension" />
+    </declare-styleable>
+    <declare-styleable name="ExpandableTextView">
+        <attr name="animation_duration" format="integer" />
+    </declare-styleable>
+</resources>
