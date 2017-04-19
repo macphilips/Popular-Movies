@@ -7,10 +7,12 @@
     <string-array name="pref_sort_list_titles">
         <item>Popular Movies</item>
         <item>Top Rated Movies</item>
+        <item>Favorite</item>
     </string-array>
     <string-array name="pref_sort_list_values">
         <item>@string/sort_popular_value</item>
         <item>@string/sort_top_rate_value</item>
+        <item>@string/sort_favorite_value</item>
     </string-array>
     <string name="sort_key">sort_list</string>
     <string name="loader_by_title">Imager Loader</string>
@@ -77,4 +79,5 @@
     <string name="title_activity_review_screen">Reviews</string>
     <string name="no_items">No Item</string>
     <string name="no_review">No review</string>
+    <string name="sort_favorite_value">favorite</string>
 </resources>

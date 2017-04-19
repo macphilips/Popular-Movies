@@ -72,6 +72,7 @@ public class TrailerVideoAdapter extends PagerAdapter {
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .fitCenter()
                 .placeholder(R.drawable.empty_photo)
+                .error(R.drawable.no_image)
                 .crossFade().listener(new RequestListener<String, GlideDrawable>() {
             @Override
             public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {

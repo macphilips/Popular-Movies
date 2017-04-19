@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onSuccess(Movies.Result value) {
                         hideIndicator();
-                        mAdapter.loadOfflineData(value);
+                        mAdapter.loadFavoriteData(value);
                     }
 
                     @Override
@@ -294,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         saveChanges(getResources().getString(R.string.sort_top_rate_value));
                         reload();
                         return true;
-                    case R.id.sort_favorite:
+                    case R.id.sort_favorite:saveChanges(getResources().getString(R.string.sort_favorite_value));
                         loadFavoriteMoviesFromDB();
                         return true;
                     default:
@@ -310,7 +310,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id;
         if (key.equalsIgnoreCase(getResources().getString(R.string.sort_top_rate_value))) {
             id = (R.id.sort_rating);
-        } else {
+        } else if(key.equalsIgnoreCase(getResources().getString(R.string.sort_favorite_value))){
+            id=R.id.sort_favorite;
+        }
+        else {
             id = (R.id.sort_popular);
         }
         MenuItem popupItem = popup.getMenu().findItem(id);

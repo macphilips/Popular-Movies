@@ -523,7 +523,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .fitCenter()
-                .placeholder(R.drawable.empty_photo).listener(new RequestListener<String, Bitmap>() {
+                .placeholder(R.drawable.empty_photo)
+                .error(R.drawable.no_image).listener(new RequestListener<String, Bitmap>() {
             @Override
             public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
                 return false;

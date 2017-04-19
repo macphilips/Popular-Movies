@@ -153,6 +153,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                 .override(itemWidth, itemHeight)
                 .fitCenter()
                 .placeholder(R.drawable.empty_photo)
+                .error(R.drawable.no_image)
                 .crossFade()
                 .into(holder.moviePoster);
     }
@@ -259,6 +260,10 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         if (nextPage != -1 && !movieList.isEmpty()) {
             return;
         }
+        resetAdapter();
+        setResult(result);
+    }
+    public void loadFavoriteData(Movies.Result result) {
         resetAdapter();
         setResult(result);
     }
