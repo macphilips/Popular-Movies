@@ -19,7 +19,6 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.SpannableStringBuilder;
 import android.text.method.LinkMovementMethod;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -657,11 +656,11 @@ public class MovieDetailsActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onError(String message) { Log.d(TAG,String.valueOf(message));
+            public void onError(String message) {
 
                 if (message.equalsIgnoreCase(getResources().getString(R.string.no_network_connection_toast))) {
 
-                    Log.d(TAG,"Load recommendation from DB");
+
                     loadRecommendationsFromDB();
 
                 } else {
@@ -701,7 +700,6 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 .subscribe(new SingleSubscriber<Movies.Result>() {
                     @Override
                     public void onSuccess(Movies.Result value) {
-                        Log.d(TAG,"onSuccess called setRecommendation result");
                         hideRecommendationProgressBar();
                         mAdapter.loadOfflineData(value);
                     }
