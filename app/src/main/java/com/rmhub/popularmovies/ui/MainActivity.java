@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdapter.loadMovie();
     }
 
-
     Single<Movies.Result> moviesObservable = Single.fromCallable(new Callable<Movies.Result>() {
         @Override
         public Movies.Result call() {
@@ -80,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     });
     private Subscription mFavoriteMoviesSubscription = null;
 
+  private SharedPreferences mPref  ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -113,10 +113,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 }
             }
-        });
+        });mPref = PreferenceManager.getDefaultSharedPreferences(this);
         showIndicator();
         if (savedInstanceState == null) {
-            mAdapter.loadMovie();
+            String key = mPref.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
+            if (!key.equalsIgnoreCase(getResources().getString(R.string.sort_favorite_value))) {
+                mAdapter.loadMovie();
+            }
         }
     }
 
@@ -171,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (mFavoriteMoviesSubscription != null && !mFavoriteMoviesSubscription.isUnsubscribed()) {
             mFavoriteMoviesSubscription.unsubscribe();
         }
-
     }
 
     @Override
@@ -188,11 +190,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
+        String key = mPref.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
+        if (key.equalsIgnoreCase(getResources().getString(R.string.sort_favorite_value))) {
+            loadFavoriteMoviesFromDB();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+
     }
 
     private void showIndicator() {
@@ -217,7 +224,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void reload() {
-        mAdapter.reload();
+        String key = mPref.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
+        if (key.equalsIgnoreCase(getResources().getString(R.string.sort_favorite_value))) {
+            loadFavoriteMoviesFromDB();
+        } else {
+            mAdapter.reload();
+        }
     }
 
     @Override
@@ -283,30 +295,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-
+                String value = "";
                 switch (item.getItemId()) {
                     case R.id.sort_popular:
-                        saveChanges(getResources().getString(R.string.sort_popular_value));
-                        reload();
-                        return true;
+                        value = (getResources().getString(R.string.sort_popular_value));
+                        break;
 
                     case R.id.sort_rating:
-                        saveChanges(getResources().getString(R.string.sort_top_rate_value));
-                        reload();
-                        return true;
-                    case R.id.sort_favorite:saveChanges(getResources().getString(R.string.sort_favorite_value));
-                        loadFavoriteMoviesFromDB();
-                        return true;
+                        value = (getResources().getString(R.string.sort_top_rate_value));
+                        break;
+                    case R.id.sort_favorite:
+                        value = (getResources().getString(R.string.sort_favorite_value));
+                        break;
                     default:
                         return false;
                 }
+                saveChanges(value);
+                reload();
+                return true;
 
             }
         });
         popup.inflate(R.menu.sort_menu);
 
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String key = sharedPreferences.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
+        String key = mPref.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
         int id;
         if (key.equalsIgnoreCase(getResources().getString(R.string.sort_top_rate_value))) {
             id = (R.id.sort_rating);
@@ -323,9 +335,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     void saveChanges(String value) {
-        SharedPreferences appSharedPrefs = PreferenceManager
-                .getDefaultSharedPreferences(this.getApplicationContext());
-        SharedPreferences.Editor prefsEditor = appSharedPrefs.edit();
+        SharedPreferences.Editor prefsEditor = mPref.edit();
         prefsEditor.putString(getResources().getString(R.string.sort_key), value);
         prefsEditor.apply();
     }

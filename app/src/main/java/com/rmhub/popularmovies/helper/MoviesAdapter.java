@@ -35,7 +35,6 @@ import butterknife.ButterKnife;
 public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHolder> implements LoadMoreCallback {
     private static final String CURRENT_PAGE_NUMBER = "nextPage";
     private static final String SCROLL_POSITION = "scroll_to";
-    private static final String IMAGE_CACHE_DIR = "thumbnails";
     private static final String TAG = MoviesAdapter.class.getSimpleName();
     private static final String MOVIE_LIST = "movie_list";
     private static final String TOTAL_COUNT = "total_count";
@@ -50,7 +49,7 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     private View.OnClickListener listener;
     private LinearLayout.LayoutParams mImageViewLayoutParams;
     private ScrollChange mScrollChange;
-    private int nextPage = 0, currentCount, totalCount, totalPages,
+    private int nextPage = 1, currentCount, totalCount, totalPages,
             numColumns, itemWidth, itemHeight;
     private OnLoadAdapter onLoadAdapter;
 
@@ -125,7 +124,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
             options.emptyView.setVisibility(View.GONE);
         }
     }
-
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -210,16 +208,17 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         Bundle bundle = savedInstanceState.getBundle(LIST_BUNDLE);
         if (bundle != null) {
-            movieList = bundle.getParcelableArrayList(MOVIE_LIST);
-            nextPage = bundle.getInt(CURRENT_PAGE_NUMBER);
-            totalPages = bundle.getInt(TOTAL_PAGE);
-            totalCount = bundle.getInt(TOTAL_COUNT);
-            int scrollTo = bundle.getInt(SCROLL_POSITION);
+            ArrayList<MovieDetail> movieList = bundle.getParcelableArrayList(MOVIE_LIST);
+
             if (movieList != null) {
-               // resetAdapter();
+                resetAdapter();
+                nextPage = bundle.getInt(CURRENT_PAGE_NUMBER);
+                totalPages = bundle.getInt(TOTAL_PAGE);
+                totalCount = bundle.getInt(TOTAL_COUNT);
+                int scrollTo = bundle.getInt(SCROLL_POSITION);
                 addMovieList(movieList);
                 mScrollChange.setLoading();
-                mRecyclerView.getLayoutManager().scrollToPosition(scrollTo);
+                mRecyclerView.smoothScrollToPosition(scrollTo);
                 if (onLoadAdapter != null) {
                     onLoadAdapter.onSuccess();
                 }
@@ -233,9 +232,12 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
     }
 
     private void resetAdapter() {
+        currentCount = 0;
+        totalCount = 0;
+        totalPages = 0;
+        nextPage = 1;
         if (!movieList.isEmpty()) {
             movieList.clear();
-            currentCount = 0;
             notifyDataSetChanged();
         }
     }
@@ -263,13 +265,14 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         resetAdapter();
         setResult(result);
     }
+
     public void loadFavoriteData(Movies.Result result) {
         resetAdapter();
         setResult(result);
     }
 
     public void loadMovie() {
-        loadMovie(1);
+        loadMovie(nextPage);
     }
 
     private void loadMovie(int page_num) {
@@ -375,7 +378,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
 
     public interface OnLoadAdapter {
         void onSuccess();
-
         void onError(String message);
 
     }

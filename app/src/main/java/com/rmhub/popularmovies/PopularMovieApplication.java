@@ -20,13 +20,9 @@ import java.io.IOException;
 
 public class PopularMovieApplication extends Application implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-
     @Override
     public void onCreate() {
         super.onCreate();
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        this.onSharedPreferenceChanged(settings, getString(R.string.sort_key));
-        settings.registerOnSharedPreferenceChangeListener(this);
         if (NetworkUtil.API_KEY.equalsIgnoreCase("<<API_KEY>>") || TextUtils.isEmpty(NetworkUtil.API_KEY)) {
             AssetManager am = getAssets();
             try {
@@ -42,6 +38,9 @@ public class PopularMovieApplication extends Application implements SharedPrefer
                 e.printStackTrace();
             }
         }
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        this.onSharedPreferenceChanged(settings, getString(R.string.sort_key));
+        settings.registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
