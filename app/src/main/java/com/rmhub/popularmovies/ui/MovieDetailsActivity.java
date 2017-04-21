@@ -19,6 +19,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.SpannableStringBuilder;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -527,6 +528,8 @@ public class MovieDetailsActivity extends AppCompatActivity {
                 .error(R.drawable.no_image).listener(new RequestListener<String, Bitmap>() {
             @Override
             public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                e.printStackTrace();
+                Log.e(TAG,"error occured while loading image");
                 return false;
             }
 

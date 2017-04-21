@@ -1,14 +1,11 @@
 package com.rmhub.popularmovies.util;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.v4.util.LruCache;
 import android.util.Log;
 
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.Volley;
 import com.rmhub.popularmovies.R;
 import com.rmhub.popularmovies.helper.MovieQuery;
@@ -37,7 +34,6 @@ public class NetworkUtil {
     private static NetworkUtil mInstance;
     private static Context mCtx;
     private RequestQueue mRequestQueue;
-    private ImageLoader mImageLoader;
 
     private NetworkUtil(Context context) {
         mCtx = context.getApplicationContext();
@@ -46,22 +42,6 @@ public class NetworkUtil {
             Log.d(TAG, "the application");
         }
         mRequestQueue = getRequestQueue();
-
-        mImageLoader = new ImageLoader(mRequestQueue,
-                new ImageLoader.ImageCache() {
-                    private final LruCache<String, Bitmap>
-                            cache = new LruCache<>(20);
-
-                    @Override
-                    public Bitmap getBitmap(String url) {
-                        return cache.get(url);
-                    }
-
-                    @Override
-                    public void putBitmap(String url, Bitmap bitmap) {
-                        cache.put(url, bitmap);
-                    }
-                });
     }
 
     public static String API_KEY = "<<API_KEY>>";
@@ -110,9 +90,7 @@ public class NetworkUtil {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         final NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnectedOrConnecting()) {
-            //   Toast.makeText(context, com.rmhub.simpleimagefetcher.R.string.no_network_connection_toast, Toast.LENGTH_LONG).show();
-
-            Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
+             Log.e(NetworkUtil.class.getSimpleName(), "checkConnection - no connection found");
             return false;
         }
         return true;
@@ -162,9 +140,5 @@ public class NetworkUtil {
 
     private void addToRequestQueue(MovieRequest<? extends ResultHandler> req) {
         getRequestQueue().add(req);
-    }
-
-    public ImageLoader getImageLoader() {
-        return mImageLoader;
     }
 }

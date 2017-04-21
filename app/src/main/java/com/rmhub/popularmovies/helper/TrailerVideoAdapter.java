@@ -2,6 +2,7 @@ package com.rmhub.popularmovies.helper;
 
 import android.content.Context;
 import android.support.v4.view.PagerAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -76,6 +77,8 @@ public class TrailerVideoAdapter extends PagerAdapter {
                 .crossFade().listener(new RequestListener<String, GlideDrawable>() {
             @Override
             public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                e.printStackTrace();
+                Log.d(TrailerVideoAdapter.class.getSimpleName(),"error loading image"); progressBar.setVisibility(View.GONE);
                 return false;
             }
 

@@ -40,4 +40,6 @@
     <style name="normal">
         <item name="android:textSize">@dimen/text_size</item>
     </style>
+    <style name="AppTheme.Dialog" parent="Theme.AppCompat" />
+
 </resources>

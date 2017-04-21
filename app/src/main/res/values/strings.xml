@@ -80,4 +80,12 @@
     <string name="no_items">No Item</string>
     <string name="no_review">No review</string>
     <string name="sort_favorite_value">favorite</string>
+
+
+    <string name="crash_dialog_title">Crash Report</string>
+    <string name="crash_dialog_text">An unexpected error occurred forcing the
+    application to stop. Please help us fix this by sending us error data,
+    all you have to do is click OK.</string>
+    <string name="crash_dialog_comment_prompt">You might add your comments about the problem below:</string>
+    <string name="crash_dialog_ok_toast">Thank you !</string>
 </resources>

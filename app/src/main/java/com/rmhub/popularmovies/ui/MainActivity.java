@@ -224,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void reload() {
+        showIndicator();
         String key = mPref.getString(getResources().getString(R.string.sort_key), getString(R.string.sort_default_value));
         if (key.equalsIgnoreCase(getResources().getString(R.string.sort_favorite_value))) {
             loadFavoriteMoviesFromDB();

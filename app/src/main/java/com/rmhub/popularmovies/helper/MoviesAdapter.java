@@ -216,6 +216,8 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
                 totalPages = bundle.getInt(TOTAL_PAGE);
                 totalCount = bundle.getInt(TOTAL_COUNT);
                 int scrollTo = bundle.getInt(SCROLL_POSITION);
+
+                Log.d(TAG, "scrollto => "+scrollTo);
                 addMovieList(movieList);
                 mScrollChange.setLoading();
                 mRecyclerView.smoothScrollToPosition(scrollTo);
@@ -251,7 +253,6 @@ public class MoviesAdapter extends RecyclerView.Adapter<MoviesAdapter.MyViewHold
         } else {
             hideEmptyView();
         }
-        Log.d(TAG, "Adding movies to list");
         this.movieList.addAll(movieList);
         currentCount = this.movieList.size();
         notifyDataSetChanged();
