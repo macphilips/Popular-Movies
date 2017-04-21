@@ -515,6 +515,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
         readMoreButton = new Button(this);
 
         details = getIntent().getBundleExtra(MOVIES_BUNDLE).getParcelable(MOVIES_DETAILS);
+        toolbar.setTitle(details.getTitle());
         markedAsFavorite();
         setupView(details);
         setupShapeDrawable();
